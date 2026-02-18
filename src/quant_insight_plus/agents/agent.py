@@ -13,6 +13,7 @@ from mixseek.models.member_agent import MemberAgentConfig
 from pydantic_ai import Agent
 from quant_insight.agents.local_code_executor.agent import LocalCodeExecutorAgent
 from quant_insight.agents.local_code_executor.models import LocalCodeExecutorConfig
+from quant_insight.storage import get_implementation_store
 
 AGENT_TYPE_NAME = "claudecode_local_code_executor"
 
@@ -23,6 +24,7 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
     LocalCodeExecutorAgent を継承し、__init__ のみオーバーライド。
     - create_authenticated_model() でモデルを解決（claudecode: プレフィックス対応）
     - pydantic-ai ツールセットは登録しない（Claude Code 組み込みツールに委ねる）
+    - _enrich_task_with_existing_scripts() をオーバーライドしスクリプト内容を埋め込む
     - execute() 等のドメインロジックはすべて親クラスから継承
     """
 
@@ -58,6 +60,50 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
             model_settings=model_settings,
             retries=self.config.max_retries,
         )
+
+    async def _enrich_task_with_existing_scripts(self, task: str) -> str:
+        """既存スクリプトの内容をタスクプロンプトに埋め込む。
+
+        親クラスはファイル名のみ追加するが、ClaudeCode 版は read_script ツールを
+        持たないため、スクリプト内容そのものをプロンプトに埋め込む。
+
+        Args:
+            task: 元のタスク文字列。
+
+        Returns:
+            既存スクリプト内容が追加されたタスク文字列。
+        """
+        impl_ctx = self.executor_config.implementation_context
+        if impl_ctx is None:
+            return task
+
+        store = get_implementation_store()
+        existing_scripts = await store.list_scripts(
+            execution_id=impl_ctx.execution_id,
+            team_id=impl_ctx.team_id,
+            round_number=impl_ctx.round_number,
+        )
+
+        if not existing_scripts:
+            return task
+
+        sections: list[str] = []
+        for script_info in existing_scripts:
+            file_name = script_info["file_name"]
+            code = await store.read_script(
+                execution_id=impl_ctx.execution_id,
+                team_id=impl_ctx.team_id,
+                round_number=impl_ctx.round_number,
+                file_name=file_name,
+            )
+            if code is not None:
+                sections.append(f"### {file_name}\n```python\n{code}\n```")
+
+        if not sections:
+            return task
+
+        footer = "\n\n---\n## 既存スクリプト\n\n" + "\n\n".join(sections)
+        return task + footer
 
 
 def register_claudecode_quant_agents() -> None:

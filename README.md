@@ -13,6 +13,7 @@ Claude Code モデル（`claudecode:` プレフィックス）使用時は CLI �
 - **ClaudeCodeLocalCodeExecutorAgent** - pydantic-ai ツールセットを登録せず、Claude Code 組み込みツールに委ねるエージェント
 - **スクリプト内容のプロンプト埋め込み** - DuckDB に保存済みの既存スクリプトをプロンプトに直接埋め込み（MCP 不要）
 - **`claudecode_local_code_executor`** エージェントタイプの MemberAgentFactory 登録
+- **CLI エントリーポイント** (`quant-insight-plus` / `qip`) - `patch_core()` とエージェント登録を自動実行
 
 ## 依存関係
 
@@ -39,19 +40,13 @@ uv sync
 
 ## クイックスタート
 
-```python
-import mixseek_plus
-from quant_insight_plus import register_claudecode_quant_agents
-
-# claudecode: プレフィックスを有効化
-mixseek_plus.patch_core()
-
-# MemberAgentFactory に登録
-register_claudecode_quant_agents()
-```
+### 1. TOML 設定を作成
 
 ```toml
 # team.toml
+
+[leader]
+model = "claudecode:claude-sonnet-4-5"
 
 [[members]]
 name = "code-executor"
@@ -62,6 +57,28 @@ system_prompt = "データ分析を行うエージェントです。"
 [members.metadata.tool_settings.local_code_executor]
 available_data_paths = ["data/stock"]
 timeout_seconds = 120
+```
+
+### 2. CLI で実行
+
+```bash
+# 専用 CLI（patch_core + エージェント登録が自動実行される）
+quant-insight-plus exec "データ分析タスク" --config team.toml
+
+# 短縮形
+qip exec "データ分析タスク" --config team.toml
+```
+
+Python コードの記述は不要です。CLI が `patch_core()` と `register_claudecode_quant_agents()` を自動実行します。
+
+### ライブラリとして使用する場合
+
+```python
+import mixseek_plus
+from quant_insight_plus import register_claudecode_quant_agents
+
+mixseek_plus.patch_core()
+register_claudecode_quant_agents()
 ```
 
 ## アーキテクチャ

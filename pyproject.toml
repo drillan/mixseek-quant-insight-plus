@@ -5,10 +5,15 @@ description = "ClaudeCode integration for mixseek-quant-insight"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.13.7"
+
 dependencies = [
     "mixseek-plus",
     "mixseek-quant-insight",
 ]
+
+[project.scripts]
+quant-insight-plus = "quant_insight_plus.cli:main"
+qip = "quant_insight_plus.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.9.24,<0.10.0"]

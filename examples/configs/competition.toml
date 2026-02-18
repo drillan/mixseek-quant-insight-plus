@@ -1,0 +1,24 @@
+[competition]
+name = "sample competition"
+description = "株価シグナル生成コンペティションサンプル"
+
+[[competition.data]]
+name = "ohlcv"
+datetime_column = "datetime"
+
+[[competition.data]]
+name = "returns"
+datetime_column = "datetime"
+
+[[competition.data]]
+name = "master"
+datetime_column = "datetime"
+
+[competition.data_split]
+train_end = "2021-12-31T23:59:59"
+valid_end = "2023-12-31T23:59:59"
+purge_rows = 1
+
+[competition.return_definition]
+window = 1
+method = "open2close"

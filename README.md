@@ -40,36 +40,60 @@ uv sync
 
 ## クイックスタート
 
-### 1. TOML 設定を作成
+### 1. Member Agent 設定を作成
 
 ```toml
-# team.toml
+# configs/agents/members/code-executor.toml
 
-[leader]
-model = "claudecode:claude-sonnet-4-5"
-
-[[members]]
-name = "code-executor"
+[agent]
 type = "claudecode_local_code_executor"
+name = "code-executor"
 model = "claudecode:claude-sonnet-4-5"
-system_prompt = "データ分析を行うエージェントです。"
+description = "ClaudeCodeでPythonコード実行・データ分析を行う"
 
-[members.metadata.tool_settings.local_code_executor]
-available_data_paths = ["data/stock"]
+[agent.system_instruction]
+text = "データ分析を行うエージェントです。"
+
+[agent.metadata.tool_settings.local_code_executor]
+available_data_paths = ["data/inputs/ohlcv/train.parquet"]
 timeout_seconds = 120
 ```
 
-### 2. CLI で実行
+### 2. チーム設定を作成
+
+```toml
+# configs/agents/teams/team.toml
+
+[team]
+team_id = "team-claudecode"
+team_name = "ClaudeCode Analysis Team"
+
+[team.leader]
+model = "claudecode:claude-sonnet-4-5"
+
+[[team.members]]
+config = "configs/agents/members/code-executor.toml"
+```
+
+### 3. CLI で実行
 
 ```bash
-# 専用 CLI（patch_core + エージェント登録が自動実行される）
-quant-insight-plus exec "データ分析タスク" --config team.toml
+# 単一チームの開発・テスト
+qip team "データ分析タスク" --config configs/agents/teams/team.toml
 
-# 短縮形
-qip exec "データ分析タスク" --config team.toml
+# 本番実行（オーケストレーター経由）
+qip exec "データ分析タスク" --config orchestrator.toml
 ```
 
 Python コードの記述は不要です。CLI が `patch_core()` と `register_claudecode_quant_agents()` を自動実行します。
+
+### CLI コマンド一覧
+
+| コマンド | 設定ファイル | 用途 |
+|---------|------------|------|
+| `qip member` | `agent.toml` | 単体 Agent テスト |
+| `qip team` | `team.toml` | 単一チーム開発・テスト |
+| `qip exec` | `orchestrator.toml` | 複数チーム本番実行 |
 
 ### ライブラリとして使用する場合
 

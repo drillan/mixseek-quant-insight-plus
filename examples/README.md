@@ -3,7 +3,7 @@
 ## 前提条件
 
 - `mixseek-quant-insight-plus` がインストール済み
-- `ANTHROPIC_API_KEY` が設定済み
+- `claude` CLI がログイン済み（`claudecode:` プレフィックスは CLI 経由で認証）
 - データファイル（parquet）が手元にある
 
 ## セットアップ
@@ -42,7 +42,6 @@ quant-insight data split --config $MIXSEEK_WORKSPACE/configs/competition.toml
 
 ```bash
 export MIXSEEK_WORKSPACE=/path/to/workspace
-export ANTHROPIC_API_KEY=sk-ant-xxx
 ```
 
 ## 実行

@@ -43,7 +43,6 @@ echo "     MIXSEEK_WORKSPACE=${WORKSPACE} quant-insight data split --config ${WO
 echo ""
 echo "  3. 環境変数を設定:"
 echo "     export MIXSEEK_WORKSPACE=${WORKSPACE}"
-echo "     export ANTHROPIC_API_KEY=sk-ant-xxx"
 echo ""
 echo "  4. 実行:"
 echo "     qip team \"データ分析タスク\" --config ${WORKSPACE}/configs/agents/teams/claudecode_team.toml"

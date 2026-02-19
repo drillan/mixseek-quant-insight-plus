@@ -312,6 +312,7 @@ quant-insight-plus version 0.1.0
 | 2 | `register_groq_agents()` | mixseek-plus | Groq エージェント登録 |
 | 3 | `register_claudecode_agents()` | mixseek-plus | ClaudeCode エージェント登録 |
 | 4 | `register_claudecode_quant_agents()` | quant-insight-plus | 本パッケージのエージェント登録 |
+| 5 | `add_typer()` / `command()` | quant-insight | quant-insight サブコマンド（setup, data, db, export）統合 |
 
 ### CLI コマンド仕様
 
@@ -335,3 +336,48 @@ quant-insight-plus version 0.1.0
 |------|-----|------|------|
 | `TASK` | `str` | はい | タスクの説明文字列 |
 | `--config` | `str` | はい | オーケストレーター設定ファイルのパス |
+
+**`qip setup`**
+
+| 引数 | 型 | 必須 | 説明 |
+|------|-----|------|------|
+| `--workspace, -w` | `Path` | いいえ | ワークスペースパス（未指定時は `$MIXSEEK_WORKSPACE`） |
+
+**`qip data fetch-jquants`**
+
+| 引数 | 型 | 必須 | 説明 |
+|------|-----|------|------|
+| `--plan, -p` | `JQuantsPlan` | いいえ | J-Quants API プラン（free/light/standard/premium、デフォルト: free） |
+| `--universe, -u` | `JQuantsUniverse` | いいえ | 対象ユニバース（prime/standard/growth/all、デフォルト: prime） |
+| `--start-date, -s` | `str` | いいえ | 開始日（YYYY-MM-DD、デフォルト: end_date - 2年） |
+| `--end-date, -e` | `str` | いいえ | 終了日（YYYY-MM-DD、デフォルト: 12週間前） |
+
+**`qip data build-returns`**
+
+| 引数 | 型 | 必須 | 説明 |
+|------|-----|------|------|
+| `--config, -c` | `Path` | はい | competition.toml のパス |
+
+**`qip data split`**
+
+| 引数 | 型 | 必須 | 説明 |
+|------|-----|------|------|
+| `--config, -c` | `Path` | はい | competition.toml のパス |
+
+**`qip db init`**
+
+| 引数 | 型 | 必須 | 説明 |
+|------|-----|------|------|
+| `--workspace, -w` | `Path` | いいえ | ワークスペースパス（未指定時は `$MIXSEEK_WORKSPACE`） |
+
+**`qip export logs EXECUTION_ID`**
+
+| 引数 | 型 | 必須 | 説明 |
+|------|-----|------|------|
+| `EXECUTION_ID` | `str` | はい | エクスポート対象の execution_id |
+| `--config, -c` | `Path` | はい | orchestrator.toml のパス |
+| `--output, -o` | `Path` | いいえ | 出力ディレクトリ（デフォルト: `$MIXSEEK_WORKSPACE/data/outputs/export`） |
+| `--workspace, -w` | `Path` | いいえ | ワークスペースパス（未指定時は `$MIXSEEK_WORKSPACE`） |
+| `--team, -t` | `str` | いいえ | 特定チームのみエクスポート |
+| `--logs-only` | `bool` | いいえ | ログ MD のみエクスポート |
+| `--submissions-only` | `bool` | いいえ | サブミッション MD のみエクスポート |

@@ -4,6 +4,7 @@ quant-insight-plus CLI が以下を自動実行することを検証:
 - patch_core() によるプロバイダー拡張
 - register_claudecode_quant_agents() によるエージェント登録
 - mixseek-core CLI コマンドへの委譲
+- quant-insight サブコマンド（setup, data, db, export）の統合
 """
 
 import importlib
@@ -100,37 +101,14 @@ class TestCLICommands:
 class TestQuantInsightSubcommands:
     """quant-insight サブコマンド統合テスト。"""
 
-    def test_setup_command_registered(self, cli_runner: CliRunner) -> None:
-        """setup コマンドが --help に表示されること。"""
+    @pytest.mark.parametrize("subcommand", ["setup", "data", "db", "export"])
+    def test_subcommand_registered(self, cli_runner: CliRunner, subcommand: str) -> None:
+        """サブコマンドが --help に表示されること。"""
         from quant_insight_plus.cli import app
 
         result = cli_runner.invoke(app, ["--help"])
         assert result.exit_code == 0
-        assert "setup" in result.output
-
-    def test_data_subcommand_registered(self, cli_runner: CliRunner) -> None:
-        """data サブコマンドグループが --help に表示されること。"""
-        from quant_insight_plus.cli import app
-
-        result = cli_runner.invoke(app, ["--help"])
-        assert result.exit_code == 0
-        assert "data" in result.output
-
-    def test_db_subcommand_registered(self, cli_runner: CliRunner) -> None:
-        """db サブコマンドグループが --help に表示されること。"""
-        from quant_insight_plus.cli import app
-
-        result = cli_runner.invoke(app, ["--help"])
-        assert result.exit_code == 0
-        assert "db" in result.output
-
-    def test_export_subcommand_registered(self, cli_runner: CliRunner) -> None:
-        """export サブコマンドグループが --help に表示されること。"""
-        from quant_insight_plus.cli import app
-
-        result = cli_runner.invoke(app, ["--help"])
-        assert result.exit_code == 0
-        assert "export" in result.output
+        assert subcommand in result.output
 
     def test_setup_help(self, cli_runner: CliRunner) -> None:
         """setup --help がセットアップの説明を表示すること。"""
@@ -140,23 +118,23 @@ class TestQuantInsightSubcommands:
         assert result.exit_code == 0
         assert "--workspace" in result.output
 
-    def test_data_help(self, cli_runner: CliRunner) -> None:
-        """data --help がデータコマンドの説明を表示すること。"""
+    @pytest.mark.parametrize(
+        ("subcommand", "expected_content"),
+        [
+            ("data", "fetch-jquants"),
+            ("db", "init"),
+            ("export", "logs"),
+        ],
+    )
+    def test_subcommand_help(
+        self,
+        cli_runner: CliRunner,
+        subcommand: str,
+        expected_content: str,
+    ) -> None:
+        """サブコマンド --help が正常に表示され、固有のコマンドを含むこと。"""
         from quant_insight_plus.cli import app
 
-        result = cli_runner.invoke(app, ["data", "--help"])
+        result = cli_runner.invoke(app, [subcommand, "--help"])
         assert result.exit_code == 0
-
-    def test_db_help(self, cli_runner: CliRunner) -> None:
-        """db --help がデータベースコマンドの説明を表示すること。"""
-        from quant_insight_plus.cli import app
-
-        result = cli_runner.invoke(app, ["db", "--help"])
-        assert result.exit_code == 0
-
-    def test_export_help(self, cli_runner: CliRunner) -> None:
-        """export --help がエクスポートコマンドの説明を表示すること。"""
-        from quant_insight_plus.cli import app
-
-        result = cli_runner.invoke(app, ["export", "--help"])
-        assert result.exit_code == 0
+        assert expected_content in result.output

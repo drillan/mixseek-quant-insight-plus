@@ -67,11 +67,18 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
         親クラスはファイル名のみ追加するが、ClaudeCode 版は read_script ツールを
         持たないため、スクリプト内容そのものをプロンプトに埋め込む。
 
+        DatabaseReadError は呼び出し元に伝播する。エンリッチメントは補助的機能だが、
+        DB エラー時にエンリッチなしで続行すると暗黙のデータ欠損となるため、
+        明示的にエラーを伝播させる（フォールバック禁止ポリシー）。
+
         Args:
             task: 元のタスク文字列。
 
         Returns:
             既存スクリプト内容が追加されたタスク文字列。
+
+        Raises:
+            DatabaseReadError: list_scripts / read_script の DB 読み込み失敗時。
         """
         impl_ctx = self.executor_config.implementation_context
         if impl_ctx is None:

@@ -8,7 +8,7 @@ from typing import Any
 
 from mixseek.agents.member.base import BaseMemberAgent
 from mixseek.agents.member.factory import MemberAgentFactory
-from mixseek.core.auth import create_authenticated_model
+from mixseek.core import auth
 from mixseek.models.member_agent import MemberAgentConfig
 from pydantic_ai import Agent
 from quant_insight.agents.local_code_executor.agent import LocalCodeExecutorAgent
@@ -49,7 +49,7 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
         model_settings = self._create_model_settings()
 
         # create_authenticated_model で claudecode: プレフィックスを解決
-        model = create_authenticated_model(self.config.model)
+        model = auth.create_authenticated_model(self.config.model)
 
         # ツールセットなし — Claude Code の組み込みツールを使用
         self.agent: Agent[LocalCodeExecutorConfig, Any] = Agent(

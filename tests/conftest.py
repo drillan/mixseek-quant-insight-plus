@@ -17,7 +17,7 @@ from quant_insight_plus.agents.agent import ClaudeCodeLocalCodeExecutorAgent
 # --- パッチ対象パス定数 ---
 INIT_STORE_PATCH = "quant_insight.agents.local_code_executor.agent.get_implementation_store"
 ENRICH_STORE_PATCH = "quant_insight_plus.agents.agent.get_implementation_store"
-MODEL_PATCH = "quant_insight_plus.agents.agent.create_authenticated_model"
+MODEL_PATCH = "mixseek.core.auth.create_authenticated_model"
 
 
 def pytest_configure(config: pytest.Config) -> None:

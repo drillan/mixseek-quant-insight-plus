@@ -37,7 +37,9 @@ core_app.add_typer(data_app, name="data")
 core_app.add_typer(db_app, name="db")
 core_app.add_typer(export_app, name="export")
 
-# examples/configs/ ディレクトリのパス（editable install 前提）
+# examples/configs/ ディレクトリのパス
+# editable install 前提（上流の quant-insight/_get_examples_dir と同じ方式）。
+# wheel インストール時は examples/ がパッケージに含まれないため動作しない。
 _PLUS_EXAMPLES_CONFIGS_DIR = Path(__file__).parent.parent.parent / "examples" / "configs"
 
 
@@ -82,7 +84,7 @@ def setup(
     """環境を一括セットアップ（mixseek init → config init → db init → ClaudeCode 設定適用）"""
     quant_setup(workspace=workspace)
 
-    ws = workspace if workspace else get_workspace()
+    ws = workspace or get_workspace()
     copied = _overlay_claudecode_configs(ws)
     typer.echo(f"ClaudeCode エージェント設定を適用: {len(copied)} ファイルを上書き")
 

@@ -43,11 +43,13 @@ class TestOverlayClaudecodeConfigs:
     自動作成するため、それを活用する。
     """
 
+    @pytest.fixture(autouse=True)
+    def _ensure_configs_dir(self, mock_workspace_env: Path) -> None:
+        (mock_workspace_env / "configs").mkdir(exist_ok=True)
+
     def test_copies_toml_files_to_workspace(self, mock_workspace_env: Path) -> None:
         """toml ファイルがワークスペースにコピーされること。"""
         from quant_insight_plus.cli import _overlay_claudecode_configs
-
-        (mock_workspace_env / "configs").mkdir(exist_ok=True)
 
         copied = _overlay_claudecode_configs(mock_workspace_env)
         assert len(copied) > 0
@@ -57,8 +59,6 @@ class TestOverlayClaudecodeConfigs:
     def test_copies_agent_configs(self, mock_workspace_env: Path) -> None:
         """3 つのエージェント設定ファイルがコピーされること。"""
         from quant_insight_plus.cli import _overlay_claudecode_configs
-
-        (mock_workspace_env / "configs").mkdir(exist_ok=True)
 
         _overlay_claudecode_configs(mock_workspace_env)
 
@@ -71,8 +71,6 @@ class TestOverlayClaudecodeConfigs:
         """サブディレクトリが自動作成されること。"""
         from quant_insight_plus.cli import _overlay_claudecode_configs
 
-        (mock_workspace_env / "configs").mkdir(exist_ok=True)
-
         _overlay_claudecode_configs(mock_workspace_env)
 
         assert (mock_workspace_env / "configs" / "agents" / "members").is_dir()
@@ -82,24 +80,17 @@ class TestOverlayClaudecodeConfigs:
         """既存のファイルを上書きすること。"""
         from quant_insight_plus.cli import _overlay_claudecode_configs
 
-        configs_dir = mock_workspace_env / "configs"
-        configs_dir.mkdir(exist_ok=True)
-
-        # 既存ファイルを作成（Gemini 設定を模倣）
-        orchestrator = configs_dir / "orchestrator.toml"
+        orchestrator = mock_workspace_env / "configs" / "orchestrator.toml"
         orchestrator.write_text('model = "google-gla:gemini-3-flash-preview"')
 
         _overlay_claudecode_configs(mock_workspace_env)
 
-        # claudecode 版で上書きされていること
         content = orchestrator.read_text()
         assert "claudecode" in content
 
     def test_raises_on_missing_examples_dir(self, mock_workspace_env: Path) -> None:
         """examples/configs/ が存在しない場合に FileNotFoundError を送出すること。"""
         from quant_insight_plus.cli import _overlay_claudecode_configs
-
-        (mock_workspace_env / "configs").mkdir(exist_ok=True)
 
         with (
             patch(
@@ -144,6 +135,8 @@ class TestSetupCommand:
 
         assert result.exit_code == 0, result.output
         assert call_order == ["quant_setup", "overlay"]
+        mock_quant_setup.assert_called_once_with(workspace=mock_workspace_env)
+        mock_overlay.assert_called_once_with(mock_workspace_env)
 
     def test_setup_help_shows_workspace_option(self) -> None:
         """setup --help に --workspace が表示されること。"""

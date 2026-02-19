@@ -11,6 +11,9 @@ mixseek-plus CLI をラップし、ClaudeCode 版 quant-insight エージェン�
 5. quant-insight サブコマンド（setup, data, db, export）の統合
 """
 
+import shutil
+from pathlib import Path
+
 import typer
 from mixseek_plus.agents import register_claudecode_agents, register_groq_agents
 from mixseek_plus.core_patch import patch_core
@@ -27,12 +30,62 @@ from importlib.metadata import PackageNotFoundError, version  # noqa: E402
 from mixseek.cli.main import app as core_app  # noqa: E402
 from quant_insight.cli.commands import data_app, db_app, export_app  # noqa: E402
 from quant_insight.cli.main import setup as quant_setup  # noqa: E402
+from quant_insight.utils.env import get_workspace  # noqa: E402
 
 # quant-insight サブコマンドを core_app に統合
 core_app.add_typer(data_app, name="data")
 core_app.add_typer(db_app, name="db")
 core_app.add_typer(export_app, name="export")
-core_app.command(name="setup")(quant_setup)
+
+# examples/configs/ ディレクトリのパス（editable install 前提）
+_PLUS_EXAMPLES_CONFIGS_DIR = Path(__file__).parent.parent.parent / "examples" / "configs"
+
+
+def _overlay_claudecode_configs(workspace: Path) -> list[Path]:
+    """claudecode 版エージェント設定をワークスペースに上書きコピー。
+
+    Args:
+        workspace: ワークスペースパス
+
+    Returns:
+        コピーされたファイルの相対パスリスト
+
+    Raises:
+        FileNotFoundError: examples/configs/ ディレクトリが見つからない場合
+    """
+    if not _PLUS_EXAMPLES_CONFIGS_DIR.is_dir():
+        msg = f"examples/configs ディレクトリが見つかりません: {_PLUS_EXAMPLES_CONFIGS_DIR}"
+        raise FileNotFoundError(msg)
+
+    configs_dir = workspace / "configs"
+    copied_files: list[Path] = []
+
+    for src_file in _PLUS_EXAMPLES_CONFIGS_DIR.rglob("*.toml"):
+        rel_path = src_file.relative_to(_PLUS_EXAMPLES_CONFIGS_DIR)
+        dest_file = configs_dir / rel_path
+        dest_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src_file, dest_file)
+        copied_files.append(rel_path)
+
+    return copied_files
+
+
+@core_app.command(name="setup")
+def setup(
+    workspace: Path | None = typer.Option(
+        None,
+        "--workspace",
+        "-w",
+        help="ワークスペースパス（未指定時は$MIXSEEK_WORKSPACE）",
+    ),
+) -> None:
+    """環境を一括セットアップ（mixseek init → config init → db init → ClaudeCode 設定適用）"""
+    quant_setup(workspace=workspace)
+
+    ws = workspace if workspace else get_workspace()
+    copied = _overlay_claudecode_configs(ws)
+    typer.echo(f"ClaudeCode エージェント設定を適用: {len(copied)} ファイルを上書き")
+
 
 try:
     __version__ = version("mixseek-quant-insight-plus")

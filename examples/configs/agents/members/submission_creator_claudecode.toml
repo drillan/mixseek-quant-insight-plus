@@ -1,7 +1,7 @@
 [agent]
 type = "claudecode_local_code_executor"
 name = "submission-creator"
-model = "claudecode:claude-sonnet-4-5"
+model = "claudecode:claude-opus-4-6"
 description = "ClaudeCodeでSubmissionスクリプトを実装・動作確認する"
 temperature = 0.0
 

@@ -145,7 +145,7 @@ $MIXSEEK_WORKSPACE/data/inputs/
 
 ```{mermaid}
 flowchart TB
-    Leader["Leader<br>（claudecode:claude-sonnet-4-5）<br>チーム全体を指揮"]
+    Leader["Leader<br>（claudecode:claude-opus-4-6）<br>チーム全体を指揮"]
     Leader -->|"タスク指示"| TA["train-analyzer<br>train データの分析<br>仮説検証"]
     Leader -->|"タスク指示"| SC["submission-creator<br>Submission スクリプト実装<br>動作確認"]
     TA -->|"AnalyzerOutput<br>scripts + report"| Leader

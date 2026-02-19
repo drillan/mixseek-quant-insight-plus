@@ -86,7 +86,7 @@ configs/
 
 | 項目 | Gemini 版 | ClaudeCode 版 |
 |------|----------|--------------|
-| model | `google-gla:gemini-3-flash-preview` | `claudecode:claude-sonnet-4-5` |
+| model | `google-gla:gemini-3-flash-preview` | `claudecode:claude-opus-4-6` |
 | agent type | `custom` + `plugin` 指定 | `claudecode_local_code_executor` |
 | コード実行 | pydantic-ai `execute_python_code` ツール | Claude Code 組み込み Bash ツール |
 | スクリプト参照 | `read_script` ツール | プロンプトに内容を自動埋め込み |

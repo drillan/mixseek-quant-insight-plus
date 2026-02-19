@@ -63,7 +63,7 @@ from quant_insight_plus import ClaudeCodeLocalCodeExecutorAgent
 config = MemberAgentConfig(
     name="code-executor",
     type="claudecode_local_code_executor",
-    model="claudecode:claude-sonnet-4-5",
+    model="claudecode:claude-opus-4-6",
     description="ClaudeCodeでPythonコード実行・データ分析を行う",
     system_instruction="データ分析を行うエージェントです。",
 )

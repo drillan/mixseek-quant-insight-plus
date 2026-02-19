@@ -218,3 +218,7 @@ __marimo__/
 
 # claude code
 /.claude
+
+# workspace
+/workspaces
+/workspace

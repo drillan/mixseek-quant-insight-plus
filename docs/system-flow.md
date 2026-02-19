@@ -44,7 +44,7 @@ flowchart TB
 
 1. `mixseek init` でワークスペースの基本ディレクトリ構造を作成
 2. `configs/` 以下に TOML 設定ファイルのテンプレートを配置
-3. `quant-insight db init` で DuckDB スキーマ（`agent_implementation` テーブル）を初期化
+3. `qip db init` で DuckDB スキーマ（`agent_implementation` テーブル）を初期化
 4. `data/inputs/` ディレクトリを作成
 
 ```

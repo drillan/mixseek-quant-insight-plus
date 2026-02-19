@@ -352,7 +352,7 @@ CLI は起動時に以下を自動実行します:
 
 1. `mixseek init` でワークスペース基本構造を作成
 2. `configs/` 以下の TOML 設定ファイルをコピー
-3. `quant-insight db init` で DuckDB スキーマを初期化
+3. `qip db init` で DuckDB スキーマを初期化
 4. `data/inputs/` ディレクトリを作成
 
 ### データの配置
@@ -370,7 +370,7 @@ $MIXSEEK_WORKSPACE/data/inputs/
 
 ```bash
 export MIXSEEK_WORKSPACE=/path/to/workspace
-quant-insight data split --config $MIXSEEK_WORKSPACE/configs/competition.toml
+qip data split --config $MIXSEEK_WORKSPACE/configs/competition.toml
 ```
 
 ### 設定ファイル構成

@@ -80,7 +80,7 @@ export MIXSEEK_WORKSPACE=/path/to/workspace
 
 1. `mixseek init` でワークスペース基本構造を作成
 2. `configs/` 以下の TOML 設定ファイルをコピー
-3. `quant-insight db init` で DuckDB スキーマを初期化
+3. `qip db init` で DuckDB スキーマを初期化
 4. `data/inputs/` ディレクトリを作成
 
 ### データの配置
@@ -99,7 +99,7 @@ $MIXSEEK_WORKSPACE/data/inputs/
 train/valid/test に分割します。
 
 ```bash
-quant-insight data split --config $MIXSEEK_WORKSPACE/configs/competition.toml
+qip data split --config $MIXSEEK_WORKSPACE/configs/competition.toml
 ```
 
 分割後のディレクトリ構造:

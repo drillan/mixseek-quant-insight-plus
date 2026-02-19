@@ -259,7 +259,7 @@ DuckDB への書き込みが3回のリトライ（指数バックオフ: 1秒 �
 
 ```bash
 export MIXSEEK_WORKSPACE=/path/to/workspace
-quant-insight db init
+qip db init
 ```
 
 ### ValueError (認証/設定)

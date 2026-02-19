@@ -13,13 +13,26 @@ mixseek-quant-insight-plus は、mixseek-quant-insight の `LocalCodeExecutorAge
 - **`claudecode_local_code_executor`** エージェントタイプの MemberAgentFactory 登録
 - **CLI エントリーポイント** (`quant-insight-plus` / `qip`): `patch_core()` とエージェント登録を自動実行
 
-## 目次
-
 ```{toctree}
-:caption: 'ドキュメント'
+:caption: 'ガイド'
 :maxdepth: 2
 
 getting-started
 user-guide
+```
+
+```{toctree}
+:caption: 'リファレンス'
+:maxdepth: 2
+
 api-reference
+configuration-reference
+```
+
+```{toctree}
+:caption: 'サポート'
+:maxdepth: 1
+
+troubleshooting
+glossary
 ```

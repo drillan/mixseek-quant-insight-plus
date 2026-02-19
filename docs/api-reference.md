@@ -116,12 +116,160 @@ ClaudeCode quant-insight エージェントを `MemberAgentFactory` に登録し
 **使用例**
 
 ```python
+import mixseek_plus
 from quant_insight_plus import register_claudecode_quant_agents
 
+# patch_core() の後に呼び出す
+mixseek_plus.patch_core()
 register_claudecode_quant_agents()
 ```
 
 > **Note**: CLI (`qip`) を使用する場合、この関数は自動的に呼び出されるため、手動での呼び出しは不要です。
+
+## 構造化出力モデル
+
+エージェントの構造化出力として使用される Pydantic モデルです。`quant_insight.agents.local_code_executor.output_models` モジュールで定義されています。
+
+### ScriptEntry
+
+```python
+class ScriptEntry(BaseModel)
+```
+
+保存するスクリプトのエントリ。
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `file_name` | `str` | ファイル名（`.py` 拡張子） |
+| `code` | `str` | Python コード文字列 |
+
+### AnalyzerOutput
+
+```python
+class AnalyzerOutput(BaseModel)
+```
+
+分析エージェントの構造化出力。TOML で `class_name = "AnalyzerOutput"` として使用します。
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `scripts` | `list[ScriptEntry]` | 分析で作成したスクリプトのリスト |
+| `report` | `str` | Markdown 形式の分析結果レポート |
+
+### SubmitterOutput
+
+```python
+class SubmitterOutput(BaseModel)
+```
+
+Submission 作成エージェントの構造化出力。TOML で `class_name = "SubmitterOutput"` として使用します。
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `submission` | `str` | Submission 形式に整合するシグナル生成関数を含む提出コード全体 |
+| `description` | `str` | Submission の概要や動作確認結果（Markdown 形式） |
+
+## 依存モデル
+
+エージェントの設定と実行コンテキストに使用される Pydantic モデルです。`quant_insight.agents.local_code_executor.models` モジュールで定義されています。
+
+### LocalCodeExecutorConfig
+
+```python
+class LocalCodeExecutorConfig(BaseModel)
+```
+
+ローカルコード実行の設定。TOML の `[agent.metadata.tool_settings.local_code_executor]` セクションに対応します。
+
+| フィールド | 型 | デフォルト | 説明 |
+|-----------|-----|----------|------|
+| `available_data_paths` | `list[str]` | `[]` | `$MIXSEEK_WORKSPACE` からの相対パスリスト |
+| `timeout_seconds` | `int` | `120` | 実行タイムアウト秒数（0より大きい値） |
+| `max_output_chars` | `int \| None` | `None` | 最大出力文字数（`None` = 無制限） |
+| `output_model` | `OutputModelConfig \| None` | `None` | 構造化出力モデル設定 |
+| `implementation_context` | `ImplementationContext \| None` | `None` | 実装コンテキスト（DuckDB 保存時に使用） |
+
+### OutputModelConfig
+
+```python
+class OutputModelConfig(BaseModel)
+```
+
+構造化出力モデルの設定。
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `module_path` | `str` | モジュールパス（例: `quant_insight.agents.local_code_executor.output_models`） |
+| `class_name` | `str` | クラス名（例: `AnalyzerOutput`） |
+
+### ImplementationContext
+
+```python
+class ImplementationContext(BaseModel)
+```
+
+エージェント実装を特定するためのコンテキスト情報。DuckDB へのスクリプト保存時に使用する識別情報です。
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `execution_id` | `str` | 実行識別子（UUID） |
+| `team_id` | `str` | チーム ID |
+| `round_number` | `int` | ラウンド番号（0以上） |
+| `member_agent_name` | `str` | メンバーエージェント名 |
+
+## 例外
+
+### DatabaseReadError
+
+```python
+class DatabaseReadError(Exception)
+```
+
+DuckDB からの読み込み失敗時に送出される例外です。`_enrich_task_with_existing_scripts()` メソッド内で `list_scripts()` または `read_script()` が失敗したときに発生します。
+
+**発生元**: `quant_insight.storage.implementation_store`
+
+**発生条件**:
+
+- DB ファイルが破損している
+- ディスク容量不足
+- 他のプロセスによる DB ファイルロック
+
+### DatabaseWriteError
+
+```python
+class DatabaseWriteError(Exception)
+```
+
+DuckDB への書き込みが3回のリトライ（指数バックオフ: 1秒 → 2秒 → 4秒）後も失敗した場合に送出される例外です。
+
+**発生元**: `quant_insight.storage.implementation_store`
+
+**発生条件**:
+
+- ディスク容量不足
+- DB ファイルの書き込み権限なし
+- ファイルシステムエラー
+
+### RuntimeError (スキーマ未初期化)
+
+`ClaudeCodeLocalCodeExecutorAgent.__init__()` の `_verify_database_schema()` で DuckDB の `agent_implementation` テーブルが検出できない場合に発生します。
+
+**対処法**:
+
+```bash
+export MIXSEEK_WORKSPACE=/path/to/workspace
+quant-insight db init
+```
+
+### ValueError (認証/設定)
+
+`ClaudeCodeLocalCodeExecutorAgent.__init__()` でモデル認証に失敗した場合、または TOML 設定に必須項目が不足している場合に発生します。
+
+**対処法**:
+
+- `claude --version` で Claude Code CLI の認証状態を確認
+- TOML に `type`, `name`, `model` が設定されているか確認
 
 ## CLI
 
@@ -164,3 +312,26 @@ quant-insight-plus version 0.1.0
 | 2 | `register_groq_agents()` | mixseek-plus | Groq エージェント登録 |
 | 3 | `register_claudecode_agents()` | mixseek-plus | ClaudeCode エージェント登録 |
 | 4 | `register_claudecode_quant_agents()` | quant-insight-plus | 本パッケージのエージェント登録 |
+
+### CLI コマンド仕様
+
+**`qip member TASK --config PATH`**
+
+| 引数 | 型 | 必須 | 説明 |
+|------|-----|------|------|
+| `TASK` | `str` | はい | タスクの説明文字列 |
+| `--config` | `str` | はい | Member Agent 設定ファイルのパス |
+
+**`qip team TASK --config PATH`**
+
+| 引数 | 型 | 必須 | 説明 |
+|------|-----|------|------|
+| `TASK` | `str` | はい | タスクの説明文字列 |
+| `--config` | `str` | はい | チーム設定ファイルのパス |
+
+**`qip exec TASK --config PATH`**
+
+| 引数 | 型 | 必須 | 説明 |
+|------|-----|------|------|
+| `TASK` | `str` | はい | タスクの説明文字列 |
+| `--config` | `str` | はい | オーケストレーター設定ファイルのパス |

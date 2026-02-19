@@ -16,5 +16,7 @@ myst_enable_extensions = [
     "tasklist",
 ]
 
+language = "ja"
+
 html_theme = "shibuya"
 html_static_path = ["_static"]

@@ -11,11 +11,20 @@ mixseek-quant-insight-plus を使い始めるためのガイドです。
 | [mixseek-plus](https://github.com/drillan/mixseek-plus) | `patch_core()`, `create_authenticated_model()` |
 | [mixseek-quant-insight](https://github.com/drillan/mixseek-quant-insight) | `LocalCodeExecutorAgent` 基底クラス |
 
-Claude Code CLI のインストール確認:
+### Claude Code CLI のインストール
 
 ```bash
+# macOS / Linux / WSL
+curl -fsSL https://claude.ai/install.sh | bash
+
+# Homebrew (macOS)
+brew install --cask claude-code
+
+# インストール確認
 claude --version
 ```
+
+初回起動時にブラウザで認証フローが開始されます。
 
 ## インストール
 
@@ -33,6 +42,19 @@ uv sync
 
 `uv.sources` により `mixseek-plus` と `mixseek-quant-insight` はローカルの editable パスから解決されます。
 
+### インストールの検証
+
+```bash
+# CLI が利用可能であることを確認
+qip --version
+
+# Claude Code CLI が認証済みであることを確認
+claude --version
+
+# Python からのインポートを確認
+python -c "from quant_insight_plus import ClaudeCodeLocalCodeExecutorAgent; print('OK')"
+```
+
 ## 環境変数の設定
 
 | 変数名 | 必須 | 説明 |
@@ -43,7 +65,60 @@ uv sync
 export MIXSEEK_WORKSPACE=/path/to/workspace
 ```
 
-> **Note**: `claudecode:` プレフィックスは Claude Code CLI のセッション認証を使用するため、APIキーの環境変数は不要です。
+> **Note**: `claudecode:` プレフィックスは Claude Code CLI のセッション認証を使用するため、API キーの環境変数は不要です。
+
+## ワークスペースの初期化
+
+`examples/setup.sh` を使用してワークスペースを初期化できます。
+
+```bash
+# ワークスペースを初期化
+./examples/setup.sh /path/to/workspace
+```
+
+セットアップスクリプトの実行内容:
+
+1. `mixseek init` でワークスペース基本構造を作成
+2. `configs/` 以下の TOML 設定ファイルをコピー
+3. `quant-insight db init` で DuckDB スキーマを初期化
+4. `data/inputs/` ディレクトリを作成
+
+### データの配置
+
+ワークスペース内の `data/inputs/` ディレクトリに parquet ファイルを配置します。
+
+```
+$MIXSEEK_WORKSPACE/data/inputs/
+├── ohlcv/ohlcv.parquet
+├── returns/returns.parquet
+└── master/master.parquet
+```
+
+### データの分割
+
+train/valid/test に分割します。
+
+```bash
+quant-insight data split --config $MIXSEEK_WORKSPACE/configs/competition.toml
+```
+
+分割後のディレクトリ構造:
+
+```
+$MIXSEEK_WORKSPACE/data/inputs/
+├── ohlcv/
+│   ├── ohlcv.parquet      # 元データ
+│   ├── train.parquet      # train 期間
+│   └── valid.parquet      # validation 期間
+├── returns/
+│   ├── returns.parquet
+│   ├── train.parquet
+│   └── valid.parquet
+└── master/
+    ├── master.parquet
+    ├── train.parquet
+    └── valid.parquet
+```
 
 ## クイックスタート
 
@@ -65,6 +140,8 @@ text = "データ分析を行うエージェントです。"
 available_data_paths = ["data/inputs/ohlcv/train.parquet"]
 timeout_seconds = 120
 ```
+
+設定項目の詳細は [Configuration Reference](configuration-reference.md) を参照してください。
 
 ### 2. チーム設定を作成
 
@@ -114,5 +191,7 @@ CLI (`qip`) を使用する場合はこの操作は不要です。CLI が自動�
 
 ## 次のステップ
 
-- [User Guide](user-guide.md) - アーキテクチャ、設定詳細、ワークスペースセットアップ
+- [User Guide](user-guide.md) - アーキテクチャ、設定詳細、スクリプト埋め込み機能
+- [Configuration Reference](configuration-reference.md) - 全設定項目のリファレンス
 - [API Reference](api-reference.md) - クラスと関数の仕様
+- [Troubleshooting](troubleshooting.md) - エラー対処法

@@ -7,7 +7,7 @@ mixseek-quant-insight-plus の処理は、**セットアップ → データ準�
 ```{mermaid}
 flowchart TB
     subgraph Phase1["1. セットアップ"]
-        A["qip setup"] --> B["ワークスペース初期化\n設定ファイル配置\nDuckDB スキーマ作成"]
+        A["qip setup"] --> B["ワークスペース初期化<br>設定ファイル配置<br>DuckDB スキーマ作成"]
     end
 
     subgraph Phase2["2. データ準備"]
@@ -19,16 +19,16 @@ flowchart TB
 
     subgraph Phase3["3. シグナル生成"]
         H["qip team / qip exec"] --> I["Leader エージェント"]
-        I --> J["train-analyzer\n（train データ分析）"]
-        I --> K["submission-creator\n（Submission 実装）"]
-        J --> L["分析レポート +\nスクリプト"]
+        I --> J["train-analyzer<br>（train データ分析）"]
+        I --> K["submission-creator<br>（Submission 実装）"]
+        J --> L["分析レポート +<br>スクリプト"]
         K --> M["Submission スクリプト"]
     end
 
     subgraph Phase4["4. 評価"]
-        M --> N["バックテストループ\n（Time Series API 形式）"]
+        M --> N["バックテストループ<br>（Time Series API 形式）"]
         N --> O["Spearman 順位相関"]
-        O --> P["シャープレシオ\n→ リーダーボード"]
+        O --> P["シャープレシオ<br>→ リーダーボード"]
     end
 
     Phase1 --> Phase2
@@ -145,11 +145,11 @@ $MIXSEEK_WORKSPACE/data/inputs/
 
 ```{mermaid}
 flowchart TB
-    Leader["Leader\n（claudecode:claude-sonnet-4-5）\nチーム全体を指揮"]
-    Leader -->|"タスク指示"| TA["train-analyzer\ntrain データの分析\n仮説検証"]
-    Leader -->|"タスク指示"| SC["submission-creator\nSubmission スクリプト実装\n動作確認"]
-    TA -->|"AnalyzerOutput\nscripts + report"| Leader
-    SC -->|"SubmitterOutput\nsubmission + description"| Leader
+    Leader["Leader<br>（claudecode:claude-sonnet-4-5）<br>チーム全体を指揮"]
+    Leader -->|"タスク指示"| TA["train-analyzer<br>train データの分析<br>仮説検証"]
+    Leader -->|"タスク指示"| SC["submission-creator<br>Submission スクリプト実装<br>動作確認"]
+    TA -->|"AnalyzerOutput<br>scripts + report"| Leader
+    SC -->|"SubmitterOutput<br>submission + description"| Leader
 ```
 
 | エージェント | 入力データ | 出力 | タイムアウト |
@@ -165,10 +165,10 @@ Leader はメンバーの出力を受け取り、仮説の検証結果に基づ�
 
 ```{mermaid}
 flowchart LR
-    R1["Round 1\nエージェント実行"] -->|"スクリプト保存"| DB[(DuckDB\nagent_implementation)]
-    DB -->|"スクリプト埋め込み\nプロンプトに自動追加"| R2["Round 2\nエージェント実行"]
+    R1["Round 1<br>エージェント実行"] -->|"スクリプト保存"| DB[(DuckDB<br>agent_implementation)]
+    DB -->|"スクリプト埋め込み<br>プロンプトに自動追加"| R2["Round 2<br>エージェント実行"]
     R2 -->|"スクリプト更新"| DB
-    DB -->|"スクリプト埋め込み"| R3["Round 3\nエージェント実行"]
+    DB -->|"スクリプト埋め込み"| R3["Round 3<br>エージェント実行"]
 ```
 
 - 各ラウンドで生成されたスクリプトは DuckDB の `agent_implementation` テーブルに保存されます
@@ -198,15 +198,15 @@ Submission スクリプトは `CorrelationSharpeRatio` メトリックによっ�
 
 ```{mermaid}
 flowchart TB
-    Sub["Submission スクリプト"] --> Parse["パース\ngenerate_signal 関数を抽出"]
-    Parse --> BT["バックテストループ\nテストデータの各日時を順に処理"]
-    BT --> Filter["現在日時までの\nデータをフィルタ"]
-    Filter --> Gen["generate_signal を呼び出し\nシグナルを生成"]
-    Gen --> Corr["Spearman 順位相関\nシグナル vs リターン"]
-    Corr --> Next{"全日時を\n処理済み?"}
+    Sub["Submission スクリプト"] --> Parse["パース<br>generate_signal 関数を抽出"]
+    Parse --> BT["バックテストループ<br>テストデータの各日時を順に処理"]
+    BT --> Filter["現在日時までの<br>データをフィルタ"]
+    Filter --> Gen["generate_signal を呼び出し<br>シグナルを生成"]
+    Gen --> Corr["Spearman 順位相関<br>シグナル vs リターン"]
+    Corr --> Next{"全日時を<br>処理済み?"}
     Next -->|"いいえ"| Filter
-    Next -->|"はい"| Stats["シャープレシオ算出\nmean / std of correlations"]
-    Stats --> Score["MetricScore\nリーダーボードに反映"]
+    Next -->|"はい"| Stats["シャープレシオ算出<br>mean / std of correlations"]
+    Stats --> Score["MetricScore<br>リーダーボードに反映"]
 ```
 
 - エージェントが生成した Submission スクリプトから `generate_signal` 関数を抽出

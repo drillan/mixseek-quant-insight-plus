@@ -138,13 +138,13 @@ t 時点のシグナルに基づき、翌営業日 (t+1) の寄付で約定、t 
 flowchart LR
     subgraph close2close["close2close 方式"]
         direction LR
-        CC1["t 日\nシグナル生成\n（close 参照）"] --> CC2["t 日\nエントリー\n（close）"]
-        CC2 --> CC3["t+1 日\nエグジット\n（close）"]
+        CC1["t 日<br>シグナル生成<br>（close 参照）"] --> CC2["t 日<br>エントリー<br>（close）"]
+        CC2 --> CC3["t+1 日<br>エグジット<br>（close）"]
     end
     subgraph open2close["open2close 方式"]
         direction LR
-        OC1["t 日\nシグナル生成\n（close 参照）"] --> OC2["t+1 日\nエントリー\n（open）"]
-        OC2 --> OC3["t+1 日\nエグジット\n（close）"]
+        OC1["t 日<br>シグナル生成<br>（close 参照）"] --> OC2["t+1 日<br>エントリー<br>（open）"]
+        OC2 --> OC3["t+1 日<br>エグジット<br>（close）"]
     end
 ```
 
@@ -271,11 +271,11 @@ Submission は Kaggle Time Series API スタイルのバックテストで評価
 
 ```{mermaid}
 flowchart TB
-    Start["テストデータの\nユニーク日時リストを取得\n（ソート済み）"] --> Loop{"次の日時\nがある?"}
-    Loop -->|"はい"| Filter["current_datetime までの\nデータをフィルタ"]
-    Filter --> Gen["generate_signal\n(available_ohlcv, available_additional)"]
-    Gen --> Validate["シグナル形式を検証\n(datetime, symbol, signal)"]
-    Validate --> Join["current_datetime の\nシグナルとリターンを結合\n(datetime, symbol で inner join)"]
+    Start["テストデータの<br>ユニーク日時リストを取得<br>（ソート済み）"] --> Loop{"次の日時<br>がある?"}
+    Loop -->|"はい"| Filter["current_datetime までの<br>データをフィルタ"]
+    Filter --> Gen["generate_signal<br>(available_ohlcv, available_additional)"]
+    Gen --> Validate["シグナル形式を検証<br>(datetime, symbol, signal)"]
+    Validate --> Join["current_datetime の<br>シグナルとリターンを結合<br>(datetime, symbol で inner join)"]
     Join --> Corr["Spearman 順位相関を計算"]
     Corr --> Store["相関値を記録"]
     Store --> Loop

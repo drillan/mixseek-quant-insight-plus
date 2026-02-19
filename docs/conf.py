@@ -4,6 +4,7 @@ author = "driller"
 
 extensions = [
     "myst_parser",
+    "sphinxcontrib.mermaid",
 ]
 
 templates_path = ["_templates"]

@@ -18,6 +18,8 @@ mixseek-quant-insight-plus は、mixseek-quant-insight の `LocalCodeExecutorAge
 :maxdepth: 2
 
 getting-started
+system-flow
+data-specification
 user-guide
 ```
 

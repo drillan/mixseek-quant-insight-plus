@@ -38,7 +38,7 @@ claude
 ```bash
 # DuckDB スキーマを初期化
 export MIXSEEK_WORKSPACE=/path/to/workspace
-quant-insight db init
+qip db init
 ```
 
 ワークスペースの `mixseek.db` に `agent_implementation` テーブルが作成されます。
@@ -63,7 +63,7 @@ ls -la $MIXSEEK_WORKSPACE/mixseek.db
 df -h $MIXSEEK_WORKSPACE
 
 # DB を再初期化（既存データは失われます）
-quant-insight db init
+qip db init
 ```
 
 > **重要**: `DatabaseReadError` は明示的に伝播されます。スクリプト埋め込みが失敗した場合、エンリッチなしで処理を続行することはありません。

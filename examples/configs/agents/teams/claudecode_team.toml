@@ -88,6 +88,8 @@ def generate_signal(ohlcv: pl.DataFrame, additional_data: dict[str, pl.DataFrame
 ---
 """
 
+[team.leader.tool_settings.claudecode]
+preset = "delegate_only"
 
 [[team.members]]
 config = "configs/agents/members/train_analyzer_claudecode.toml"

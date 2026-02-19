@@ -8,6 +8,7 @@ mixseek-plus CLI をラップし、ClaudeCode 版 quant-insight エージェン�
 2. mixseek-plus のエージェント登録
 3. quant-insight-plus のエージェント登録
 4. mixseek-core CLI アプリのインポート
+5. quant-insight サブコマンド（setup, data, db, export）の統合
 """
 
 import typer
@@ -24,6 +25,14 @@ register_claudecode_quant_agents()
 from importlib.metadata import PackageNotFoundError, version  # noqa: E402
 
 from mixseek.cli.main import app as core_app  # noqa: E402
+from quant_insight.cli.commands import data_app, db_app, export_app  # noqa: E402
+from quant_insight.cli.main import setup as quant_setup  # noqa: E402
+
+# quant-insight サブコマンドを core_app に統合
+core_app.add_typer(data_app, name="data")
+core_app.add_typer(db_app, name="db")
+core_app.add_typer(export_app, name="export")
+core_app.command(name="setup")(quant_setup)
 
 try:
     __version__ = version("mixseek-quant-insight-plus")

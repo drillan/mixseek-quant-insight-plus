@@ -94,6 +94,10 @@ Python コードの記述は不要です。CLI が `patch_core()` と `register_
 | `qip member` | `agent.toml` | 単体 Agent テスト |
 | `qip team` | `team.toml` | 単一チーム開発・テスト |
 | `qip exec` | `orchestrator.toml` | 複数チーム本番実行 |
+| `qip setup` | - | 環境を一括セットアップ（mixseek init → config init → db init） |
+| `qip data` | - | データ取得・加工・分割 |
+| `qip db` | - | データベース管理 |
+| `qip export` | - | ログエクスポート |
 
 ### ライブラリとして使用する場合
 

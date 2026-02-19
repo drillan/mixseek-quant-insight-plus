@@ -95,3 +95,68 @@ class TestCLICommands:
         result = cli_runner.invoke(app, ["--version"])
         assert result.exit_code == 0
         assert "quant-insight-plus" in result.output
+
+
+class TestQuantInsightSubcommands:
+    """quant-insight サブコマンド統合テスト。"""
+
+    def test_setup_command_registered(self, cli_runner: CliRunner) -> None:
+        """setup コマンドが --help に表示されること。"""
+        from quant_insight_plus.cli import app
+
+        result = cli_runner.invoke(app, ["--help"])
+        assert result.exit_code == 0
+        assert "setup" in result.output
+
+    def test_data_subcommand_registered(self, cli_runner: CliRunner) -> None:
+        """data サブコマンドグループが --help に表示されること。"""
+        from quant_insight_plus.cli import app
+
+        result = cli_runner.invoke(app, ["--help"])
+        assert result.exit_code == 0
+        assert "data" in result.output
+
+    def test_db_subcommand_registered(self, cli_runner: CliRunner) -> None:
+        """db サブコマンドグループが --help に表示されること。"""
+        from quant_insight_plus.cli import app
+
+        result = cli_runner.invoke(app, ["--help"])
+        assert result.exit_code == 0
+        assert "db" in result.output
+
+    def test_export_subcommand_registered(self, cli_runner: CliRunner) -> None:
+        """export サブコマンドグループが --help に表示されること。"""
+        from quant_insight_plus.cli import app
+
+        result = cli_runner.invoke(app, ["--help"])
+        assert result.exit_code == 0
+        assert "export" in result.output
+
+    def test_setup_help(self, cli_runner: CliRunner) -> None:
+        """setup --help がセットアップの説明を表示すること。"""
+        from quant_insight_plus.cli import app
+
+        result = cli_runner.invoke(app, ["setup", "--help"])
+        assert result.exit_code == 0
+        assert "--workspace" in result.output
+
+    def test_data_help(self, cli_runner: CliRunner) -> None:
+        """data --help がデータコマンドの説明を表示すること。"""
+        from quant_insight_plus.cli import app
+
+        result = cli_runner.invoke(app, ["data", "--help"])
+        assert result.exit_code == 0
+
+    def test_db_help(self, cli_runner: CliRunner) -> None:
+        """db --help がデータベースコマンドの説明を表示すること。"""
+        from quant_insight_plus.cli import app
+
+        result = cli_runner.invoke(app, ["db", "--help"])
+        assert result.exit_code == 0
+
+    def test_export_help(self, cli_runner: CliRunner) -> None:
+        """export --help がエクスポートコマンドの説明を表示すること。"""
+        from quant_insight_plus.cli import app
+
+        result = cli_runner.invoke(app, ["export", "--help"])
+        assert result.exit_code == 0

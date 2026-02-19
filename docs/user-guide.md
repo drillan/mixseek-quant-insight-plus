@@ -34,7 +34,7 @@ mixseek-core (フレームワーク)
 [agent]
 type = "claudecode_local_code_executor"
 name = "code-executor"
-model = "claudecode:claude-sonnet-4-5"
+model = "claudecode:claude-opus-4-6"
 description = "ClaudeCodeでPythonコード実行・データ分析を行う"
 
 [agent.system_instruction]
@@ -136,7 +136,7 @@ team_id = "team-claudecode"
 team_name = "Quant Signal Team ClaudeCode"
 
 [team.leader]
-model = "claudecode:claude-sonnet-4-5"
+model = "claudecode:claude-opus-4-6"
 temperature = 0.0
 
 system_instruction = """
@@ -394,7 +394,7 @@ configs/
 
 | 項目 | Gemini 版 (quant-insight) | ClaudeCode 版 (本パッケージ) |
 |------|----------|--------------|
-| model | `google-gla:gemini-3-flash-preview` | `claudecode:claude-sonnet-4-5` |
+| model | `google-gla:gemini-3-flash-preview` | `claudecode:claude-opus-4-6` |
 | agent type | `custom` + `plugin` 指定 | `claudecode_local_code_executor` |
 | コード実行 | pydantic-ai `execute_python_code` ツール | Claude Code 組み込み Bash ツール |
 | スクリプト参照 | `read_script` ツール | プロンプトに内容を自動埋め込み |

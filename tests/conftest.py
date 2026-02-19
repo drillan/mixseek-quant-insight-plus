@@ -42,7 +42,7 @@ def member_agent_config() -> MemberAgentConfig:
     return MemberAgentConfig(
         name="test-agent",
         type="custom",
-        model="claudecode:claude-sonnet-4-5",
+        model="claudecode:claude-opus-4-6",
         description="Test agent",
         system_instruction="You are a test agent.",
         metadata={

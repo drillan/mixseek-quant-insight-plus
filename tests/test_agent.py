@@ -27,7 +27,7 @@ class TestClaudeCodeLocalCodeExecutorAgentInit:
 
         agent = ClaudeCodeLocalCodeExecutorAgent(member_agent_config)
 
-        mock_create_model.assert_called_once_with("claudecode:claude-sonnet-4-5")
+        mock_create_model.assert_called_once_with("claudecode:claude-opus-4-6")
         assert agent.agent.model is mock_model
 
     def test_no_toolsets_registered(

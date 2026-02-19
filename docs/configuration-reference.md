@@ -10,7 +10,7 @@ mixseek-quant-insight-plus で使用する全設定ファイルのリファレ�
 |------|-----|------|----------|------|
 | `type` | `str` | はい | — | `"claudecode_local_code_executor"` を指定 |
 | `name` | `str` | はい | — | エージェント名（チーム内で一意） |
-| `model` | `str` | はい | — | モデルID（例: `claudecode:claude-sonnet-4-5`） |
+| `model` | `str` | はい | — | モデルID（例: `claudecode:claude-opus-4-6`） |
 | `description` | `str` | いいえ | `""` | エージェントの説明（Leader がタスク委譲時に参照） |
 | `temperature` | `float` | いいえ | モデル依存 | 生成の温度パラメータ |
 | `max_tokens` | `int` | いいえ | モデル依存 | 最大トークン数 |
@@ -78,7 +78,7 @@ mixseek-quant-insight-plus で使用する全設定ファイルのリファレ�
 [agent]
 type = "claudecode_local_code_executor"
 name = "train-analyzer"
-model = "claudecode:claude-sonnet-4-5"
+model = "claudecode:claude-opus-4-6"
 description = "ClaudeCodeでPythonコード実行・trainデータ分析を行う"
 temperature = 0.0
 
@@ -107,7 +107,7 @@ class_name = "AnalyzerOutput"
 [agent]
 type = "claudecode_local_code_executor"
 name = "submission-creator"
-model = "claudecode:claude-sonnet-4-5"
+model = "claudecode:claude-opus-4-6"
 description = "ClaudeCodeでSubmissionスクリプトを実装・動作確認する"
 temperature = 0.0
 
@@ -141,7 +141,7 @@ class_name = "SubmitterOutput"
 
 | 項目 | 型 | 必須 | デフォルト | 説明 |
 |------|-----|------|----------|------|
-| `model` | `str` | はい | — | モデルID（例: `claudecode:claude-sonnet-4-5`） |
+| `model` | `str` | はい | — | モデルID（例: `claudecode:claude-opus-4-6`） |
 | `temperature` | `float` | いいえ | モデル依存 | 生成の温度パラメータ |
 | `system_instruction` | `str` | いいえ | `""` | Leader への指示（複数行可） |
 
@@ -159,7 +159,7 @@ team_id = "team-claudecode"
 team_name = "Quant Signal Team ClaudeCode"
 
 [team.leader]
-model = "claudecode:claude-sonnet-4-5"
+model = "claudecode:claude-opus-4-6"
 temperature = 0.0
 
 system_instruction = """

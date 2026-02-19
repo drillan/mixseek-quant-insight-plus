@@ -130,7 +130,7 @@ $MIXSEEK_WORKSPACE/data/inputs/
 [agent]
 type = "claudecode_local_code_executor"
 name = "code-executor"
-model = "claudecode:claude-sonnet-4-5"
+model = "claudecode:claude-opus-4-6"
 description = "ClaudeCodeでPythonコード実行・データ分析を行う"
 
 [agent.system_instruction]
@@ -153,7 +153,7 @@ team_id = "team-claudecode"
 team_name = "ClaudeCode Analysis Team"
 
 [team.leader]
-model = "claudecode:claude-sonnet-4-5"
+model = "claudecode:claude-opus-4-6"
 
 [[team.members]]
 config = "configs/agents/members/code-executor.toml"

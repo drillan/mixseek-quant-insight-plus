@@ -9,7 +9,7 @@ mixseek-quant-insight-plus で使用される主要な用語の定義です。
 : TOML 設定の `[agent]` セクションで使用するエージェントタイプ名。`register_claudecode_quant_agents()` の呼び出しにより `MemberAgentFactory` に登録される。
 
 `claudecode:` プレフィックス
-: モデル ID の記法。`claudecode:claude-sonnet-4-5` のように使用し、Claude Code CLI のセッション認証経由でモデルにアクセスする。API キーは不要。mixseek-plus の `create_authenticated_model()` で解決される。
+: モデル ID の記法。`claudecode:claude-opus-4-6` のように使用し、Claude Code CLI のセッション認証経由でモデルにアクセスする。API キーは不要。mixseek-plus の `create_authenticated_model()` で解決される。
 
 `LocalCodeExecutorAgent`
 : mixseek-quant-insight が提供するベースエージェント。pydantic-ai のカスタムツールセット経由でコード実行を行う。`ClaudeCodeLocalCodeExecutorAgent` の親クラス。

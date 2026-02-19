@@ -1,7 +1,7 @@
 [agent]
 type = "claudecode_local_code_executor"
 name = "train-analyzer"
-model = "claudecode:claude-sonnet-4-5"
+model = "claudecode:claude-opus-4-6"
 description = "ClaudeCodeでPythonコード実行・trainデータ分析を行う"
 temperature = 0.0
 

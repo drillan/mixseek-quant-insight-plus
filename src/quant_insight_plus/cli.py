@@ -59,8 +59,4 @@ def main() -> None:
 
     quant-insight-plus コマンドで呼び出される。
     """
-    from mixseek_plus.core_patch import is_patched
-
-    if not is_patched():
-        patch_core()
     app()

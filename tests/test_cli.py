@@ -61,6 +61,23 @@ class TestCLIAutoRegistration:
         assert "claudecode_local_code_executor" in supported_types
 
 
+class TestMainFunction:
+    """main() 関数のデッドコード不在テスト。"""
+
+    def test_main_has_no_is_patched_check(self) -> None:
+        """main() 内に is_patched() の冗長チェックがないこと。
+
+        patch_core() はモジュールレベルで実行されるため、
+        main() 内での is_patched() チェックは到達不能コード。
+        """
+        import inspect
+
+        from quant_insight_plus.cli import main
+
+        source = inspect.getsource(main)
+        assert "is_patched" not in source
+
+
 class TestCLICommands:
     """CLI コマンド委譲テスト。"""
 

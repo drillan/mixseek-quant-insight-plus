@@ -10,6 +10,7 @@ import pytest
 from mixseek.models.member_agent import MemberAgentConfig
 from pydantic_ai.models import Model
 from quant_insight.agents.local_code_executor.models import ImplementationContext
+from quant_insight.storage import DatabaseReadError
 
 from quant_insight_plus.agents.agent import ClaudeCodeLocalCodeExecutorAgent
 
@@ -191,3 +192,99 @@ class TestEnrichTaskWithExistingScripts:
         result = await agent._enrich_task_with_existing_scripts("元のタスク")
 
         assert result.startswith("元のタスク")
+
+
+class TestEnrichTaskDatabaseReadError:
+    """DatabaseReadError が明示的に伝播されることを検証。
+
+    エンリッチメントは補助的機能だが、CLAUDE.md の「フォールバック全面禁止」
+    ルールに従い、DB エラー時はデフォルト値（エンリッチなしの task）で続行せず、
+    例外を呼び出し元に伝播させる。
+    """
+
+    @patch(ENRICH_STORE_PATCH)
+    async def test_list_scripts_database_error_propagates(
+        self,
+        mock_get_store: MagicMock,
+        agent: ClaudeCodeLocalCodeExecutorAgent,
+    ) -> None:
+        """list_scripts の DatabaseReadError が伝播すること。"""
+        agent.executor_config.implementation_context = ImplementationContext(
+            execution_id="exec-1",
+            team_id="team-1",
+            round_number=1,
+            member_agent_name="test-agent",
+        )
+        store = MagicMock()
+        store.list_scripts = AsyncMock(
+            side_effect=DatabaseReadError("Failed to list scripts: connection lost"),
+        )
+        mock_get_store.return_value = store
+
+        with pytest.raises(DatabaseReadError, match="connection lost"):
+            await agent._enrich_task_with_existing_scripts("分析してください")
+
+    @patch(ENRICH_STORE_PATCH)
+    async def test_read_script_database_error_propagates(
+        self,
+        mock_get_store: MagicMock,
+        agent: ClaudeCodeLocalCodeExecutorAgent,
+    ) -> None:
+        """read_script の DatabaseReadError が伝播すること。"""
+        agent.executor_config.implementation_context = ImplementationContext(
+            execution_id="exec-1",
+            team_id="team-1",
+            round_number=1,
+            member_agent_name="test-agent",
+        )
+        store = MagicMock()
+        store.list_scripts = AsyncMock(
+            return_value=[{"file_name": "script.py", "created_at": "2026-01-01"}],
+        )
+        store.read_script = AsyncMock(
+            side_effect=DatabaseReadError("Failed to read script: disk I/O error"),
+        )
+        mock_get_store.return_value = store
+
+        with pytest.raises(DatabaseReadError, match="disk I/O error"):
+            await agent._enrich_task_with_existing_scripts("分析してください")
+
+    @patch(ENRICH_STORE_PATCH)
+    async def test_read_script_error_mid_loop_propagates(
+        self,
+        mock_get_store: MagicMock,
+        agent: ClaudeCodeLocalCodeExecutorAgent,
+    ) -> None:
+        """複数スクリプトの途中で read_script が失敗した場合、部分結果ではなく例外を伝播すること。"""
+        agent.executor_config.implementation_context = ImplementationContext(
+            execution_id="exec-1",
+            team_id="team-1",
+            round_number=1,
+            member_agent_name="test-agent",
+        )
+        store = MagicMock()
+        store.list_scripts = AsyncMock(
+            return_value=[
+                {"file_name": "ok.py", "created_at": "2026-01-01"},
+                {"file_name": "fail.py", "created_at": "2026-01-01"},
+            ],
+        )
+        call_count = 0
+
+        async def read_side_effect(
+            execution_id: str,
+            team_id: str,
+            round_number: int,
+            file_name: str,
+        ) -> str:
+            nonlocal call_count
+            call_count += 1
+            if file_name == "fail.py":
+                raise DatabaseReadError("Failed to read script: corrupted")
+            return "code = 1"
+
+        store.read_script = AsyncMock(side_effect=read_side_effect)
+        mock_get_store.return_value = store
+
+        with pytest.raises(DatabaseReadError, match="corrupted"):
+            await agent._enrich_task_with_existing_scripts("分析してください")

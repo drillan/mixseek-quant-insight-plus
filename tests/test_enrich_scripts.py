@@ -7,66 +7,11 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from mixseek.models.member_agent import MemberAgentConfig
-from pydantic_ai.models import Model
 from quant_insight.agents.local_code_executor.models import ImplementationContext
 from quant_insight.storage import DatabaseReadError
 
 from quant_insight_plus.agents.agent import ClaudeCodeLocalCodeExecutorAgent
-
-INIT_STORE_PATCH = "quant_insight.agents.local_code_executor.agent.get_implementation_store"
-ENRICH_STORE_PATCH = "quant_insight_plus.agents.agent.get_implementation_store"
-MODEL_PATCH = "quant_insight_plus.agents.agent.create_authenticated_model"
-
-
-@pytest.fixture
-def member_agent_config() -> MemberAgentConfig:
-    """テスト用の MemberAgentConfig を生成。"""
-    return MemberAgentConfig(
-        name="test-agent",
-        type="custom",
-        model="claudecode:claude-sonnet-4-5",
-        description="Test agent",
-        system_instruction="You are a test agent.",
-        metadata={
-            "tool_settings": {
-                "local_code_executor": {
-                    "available_data_paths": ["data/test"],
-                    "timeout_seconds": 60,
-                }
-            }
-        },
-    )
-
-
-@pytest.fixture
-def mock_store() -> MagicMock:
-    """DuckDB ストアの mock。"""
-    store = MagicMock()
-    store.table_exists.return_value = True
-    return store
-
-
-@pytest.fixture
-def mock_model() -> MagicMock:
-    """pydantic-ai Model の mock。"""
-    return MagicMock(spec=Model)
-
-
-@pytest.fixture
-@patch(INIT_STORE_PATCH)
-@patch(MODEL_PATCH)
-def agent(
-    mock_create_model: MagicMock,
-    mock_get_store: MagicMock,
-    member_agent_config: MemberAgentConfig,
-    mock_store: MagicMock,
-    mock_model: MagicMock,
-) -> ClaudeCodeLocalCodeExecutorAgent:
-    """テスト用エージェントインスタンス。"""
-    mock_create_model.return_value = mock_model
-    mock_get_store.return_value = mock_store
-    return ClaudeCodeLocalCodeExecutorAgent(member_agent_config)
+from tests.conftest import ENRICH_STORE_PATCH
 
 
 class TestEnrichTaskWithExistingScripts:
@@ -88,14 +33,10 @@ class TestEnrichTaskWithExistingScripts:
         self,
         mock_get_store: MagicMock,
         agent: ClaudeCodeLocalCodeExecutorAgent,
+        implementation_context: ImplementationContext,
     ) -> None:
         """既存スクリプトがない場合はタスクをそのまま返すこと。"""
-        agent.executor_config.implementation_context = ImplementationContext(
-            execution_id="exec-1",
-            team_id="team-1",
-            round_number=1,
-            member_agent_name="test-agent",
-        )
+        agent.executor_config.implementation_context = implementation_context
         store = MagicMock()
         store.list_scripts = AsyncMock(return_value=[])
         mock_get_store.return_value = store
@@ -109,14 +50,10 @@ class TestEnrichTaskWithExistingScripts:
         self,
         mock_get_store: MagicMock,
         agent: ClaudeCodeLocalCodeExecutorAgent,
+        implementation_context: ImplementationContext,
     ) -> None:
         """既存スクリプトの内容がプロンプトに埋め込まれること。"""
-        agent.executor_config.implementation_context = ImplementationContext(
-            execution_id="exec-1",
-            team_id="team-1",
-            round_number=1,
-            member_agent_name="test-agent",
-        )
+        agent.executor_config.implementation_context = implementation_context
         store = MagicMock()
         store.list_scripts = AsyncMock(return_value=[{"file_name": "analysis.py", "created_at": "2026-01-01"}])
         store.read_script = AsyncMock(return_value="import pandas as pd\ndf = pd.read_csv('data.csv')")
@@ -133,14 +70,10 @@ class TestEnrichTaskWithExistingScripts:
         self,
         mock_get_store: MagicMock,
         agent: ClaudeCodeLocalCodeExecutorAgent,
+        implementation_context: ImplementationContext,
     ) -> None:
         """複数スクリプトがすべて埋め込まれること。"""
-        agent.executor_config.implementation_context = ImplementationContext(
-            execution_id="exec-1",
-            team_id="team-1",
-            round_number=1,
-            member_agent_name="test-agent",
-        )
+        agent.executor_config.implementation_context = implementation_context
         store = MagicMock()
         store.list_scripts = AsyncMock(
             return_value=[
@@ -176,14 +109,10 @@ class TestEnrichTaskWithExistingScripts:
         self,
         mock_get_store: MagicMock,
         agent: ClaudeCodeLocalCodeExecutorAgent,
+        implementation_context: ImplementationContext,
     ) -> None:
         """元のタスク文字列が先頭に保持されること。"""
-        agent.executor_config.implementation_context = ImplementationContext(
-            execution_id="exec-1",
-            team_id="team-1",
-            round_number=1,
-            member_agent_name="test-agent",
-        )
+        agent.executor_config.implementation_context = implementation_context
         store = MagicMock()
         store.list_scripts = AsyncMock(return_value=[{"file_name": "a.py", "created_at": "2026-01-01"}])
         store.read_script = AsyncMock(return_value="code = 1")
@@ -207,14 +136,10 @@ class TestEnrichTaskDatabaseReadError:
         self,
         mock_get_store: MagicMock,
         agent: ClaudeCodeLocalCodeExecutorAgent,
+        implementation_context: ImplementationContext,
     ) -> None:
         """list_scripts の DatabaseReadError が伝播すること。"""
-        agent.executor_config.implementation_context = ImplementationContext(
-            execution_id="exec-1",
-            team_id="team-1",
-            round_number=1,
-            member_agent_name="test-agent",
-        )
+        agent.executor_config.implementation_context = implementation_context
         store = MagicMock()
         store.list_scripts = AsyncMock(
             side_effect=DatabaseReadError("Failed to list scripts: connection lost"),
@@ -229,14 +154,10 @@ class TestEnrichTaskDatabaseReadError:
         self,
         mock_get_store: MagicMock,
         agent: ClaudeCodeLocalCodeExecutorAgent,
+        implementation_context: ImplementationContext,
     ) -> None:
         """read_script の DatabaseReadError が伝播すること。"""
-        agent.executor_config.implementation_context = ImplementationContext(
-            execution_id="exec-1",
-            team_id="team-1",
-            round_number=1,
-            member_agent_name="test-agent",
-        )
+        agent.executor_config.implementation_context = implementation_context
         store = MagicMock()
         store.list_scripts = AsyncMock(
             return_value=[{"file_name": "script.py", "created_at": "2026-01-01"}],
@@ -254,14 +175,10 @@ class TestEnrichTaskDatabaseReadError:
         self,
         mock_get_store: MagicMock,
         agent: ClaudeCodeLocalCodeExecutorAgent,
+        implementation_context: ImplementationContext,
     ) -> None:
         """複数スクリプトの途中で read_script が失敗した場合、部分結果ではなく例外を伝播すること。"""
-        agent.executor_config.implementation_context = ImplementationContext(
-            execution_id="exec-1",
-            team_id="team-1",
-            round_number=1,
-            member_agent_name="test-agent",
-        )
+        agent.executor_config.implementation_context = implementation_context
         store = MagicMock()
         store.list_scripts = AsyncMock(
             return_value=[

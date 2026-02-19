@@ -86,8 +86,7 @@ class TestClaudeCodeLocalCodeExecutorAgentInit:
 
         # _function_toolset にツールが登録されていないことを確認
         toolset = getattr(agent.agent, "_function_toolset", None)
-        if toolset is not None:
-            assert len(toolset.tools) == 0
+        assert toolset is None or len(toolset.tools) == 0
 
     @patch(STORE_PATCH)
     @patch(MODEL_PATCH)

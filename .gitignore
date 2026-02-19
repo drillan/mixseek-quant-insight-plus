@@ -212,3 +212,9 @@ __marimo__/
 /drafts/
 # hachimoku
 /.hachimoku/
+
+# issue-workflow
+/.issue-workflow/
+
+# claude code
+/.claude

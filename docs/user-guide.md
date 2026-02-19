@@ -136,7 +136,7 @@ config = "configs/agents/teams/claudecode_team.toml"
 
 タスクプロンプトに以下のようなフッタが自動追加されます:
 
-```markdown
+````markdown
 ---
 ## 既存スクリプト
 
@@ -153,7 +153,7 @@ import pandas as pd
 # シグナル生成ロジック
 ...
 ```
-```
+````
 
 ### エラー処理
 

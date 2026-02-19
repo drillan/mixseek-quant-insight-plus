@@ -4,6 +4,7 @@ quant-insight-plus CLI が以下を自動実行することを検証:
 - patch_core() によるプロバイダー拡張
 - register_claudecode_quant_agents() によるエージェント登録
 - mixseek-core CLI コマンドへの委譲
+- quant-insight サブコマンド（setup, data, db, export）の統合
 """
 
 import importlib
@@ -95,3 +96,45 @@ class TestCLICommands:
         result = cli_runner.invoke(app, ["--version"])
         assert result.exit_code == 0
         assert "quant-insight-plus" in result.output
+
+
+class TestQuantInsightSubcommands:
+    """quant-insight サブコマンド統合テスト。"""
+
+    @pytest.mark.parametrize("subcommand", ["setup", "data", "db", "export"])
+    def test_subcommand_registered(self, cli_runner: CliRunner, subcommand: str) -> None:
+        """サブコマンドが --help に表示されること。"""
+        from quant_insight_plus.cli import app
+
+        result = cli_runner.invoke(app, ["--help"])
+        assert result.exit_code == 0
+        assert subcommand in result.output
+
+    def test_setup_help(self, cli_runner: CliRunner) -> None:
+        """setup --help がセットアップの説明を表示すること。"""
+        from quant_insight_plus.cli import app
+
+        result = cli_runner.invoke(app, ["setup", "--help"])
+        assert result.exit_code == 0
+        assert "--workspace" in result.output
+
+    @pytest.mark.parametrize(
+        ("subcommand", "expected_content"),
+        [
+            ("data", "fetch-jquants"),
+            ("db", "init"),
+            ("export", "logs"),
+        ],
+    )
+    def test_subcommand_help(
+        self,
+        cli_runner: CliRunner,
+        subcommand: str,
+        expected_content: str,
+    ) -> None:
+        """サブコマンド --help が正常に表示され、固有のコマンドを含むこと。"""
+        from quant_insight_plus.cli import app
+
+        result = cli_runner.invoke(app, [subcommand, "--help"])
+        assert result.exit_code == 0
+        assert expected_content in result.output

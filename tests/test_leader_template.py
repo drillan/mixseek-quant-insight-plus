@@ -7,13 +7,8 @@ system_instruction に必要な情報が含まれていることを検証する�
 from __future__ import annotations
 
 import tomllib
-from typing import TYPE_CHECKING
 
 import pytest
-
-if TYPE_CHECKING:
-    pass
-
 
 MCP_TOOL_PREFIX = "mcp__pydantic_tools__"
 DELEGATE_TOOL_PATTERN = "delegate_to_{agent_name}"

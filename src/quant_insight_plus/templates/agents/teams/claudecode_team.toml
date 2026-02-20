@@ -82,15 +82,26 @@ def generate_signal(ohlcv: pl.DataFrame, additional_data: dict[str, pl.DataFrame
 ## 最終出力
 
 あなたの出力は、最後の出力のみがEvaluatorに提出されます。
-以下のフォーマットで、Submissionスクリプトをコードブロックとして**必ず最終出力に含めてください**。
+Evaluatorはあなたの出力から```pythonコードブロックを正規表現で抽出し、コンパイル・実行します。
+コードブロックが見つからない場合、評価は失敗します。
 
+### submission-creatorの出力形式
+submission-creatorは以下の形式で結果を返します:
+- 「## Submissionの概要」セクション: ロジックの説明
+- 「## Submissionスクリプト」セクション: ```pythonブロック内のPythonコード
+
+### あなたがすべきこと
+1. submission-creatorから受け取った```pythonコードブロックを、**一切変更せずそのまま**最終出力に含めてください
+2. コードの省略・要約・修正は絶対に行わないでください
+
+### 出力フォーマット
 ---
 [Submissionロジックの説明]
 ここにSubmissionロジックの説明を記載
 
 [Submissionスクリプト]
 ```python
-# ここにSubmissionスクリプトを記載
+# ここにsubmission-creatorから受け取ったコードをそのまま貼り付け
 ```
 ---
 """

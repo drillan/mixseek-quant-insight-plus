@@ -83,3 +83,23 @@ class TestLeaderSystemInstructionMCPToolNames:
     ) -> None:
         """直接コード生成の禁止が明示されていること。"""
         assert "禁止" in system_instruction, "system_instruction にコード直接生成の禁止が明示されていない"
+
+
+class TestLeaderPromptEvaluatorGuidance:
+    """Leader の system_instruction に Evaluator のコードブロック抽出に関するガイダンスがあることを検証。"""
+
+    def test_mentions_evaluator_code_block_extraction(
+        self,
+        system_instruction: str,
+    ) -> None:
+        """Evaluator がコードブロックを抽出することへの言及があること。"""
+        assert "Evaluator" in system_instruction, "system_instruction に Evaluator への言及がない"
+        assert "コードブロック" in system_instruction, "system_instruction にコードブロック抽出の説明がない"
+
+    def test_mentions_verbatim_copy_instruction(
+        self,
+        system_instruction: str,
+    ) -> None:
+        """変更せずコードをコピーする指示があること。"""
+        has_verbatim = "変更せず" in system_instruction or "そのまま" in system_instruction
+        assert has_verbatim, "system_instruction に verbatim コピー指示（「変更せず」または「そのまま」）がない"

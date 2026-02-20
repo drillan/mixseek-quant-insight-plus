@@ -2,7 +2,7 @@
 
 ## 前提条件
 
-- `mixseek-quant-insight-plus` がインストール済み
+- `mixseek-quant-insight-plus` がインストール済み（`uv tool install git+https://github.com/drillan/mixseek-quant-insight-plus`）
 - `claude` CLI がログイン済み（`claudecode:` プレフィックスは CLI 経由で認証）
 - データファイル（parquet）が手元にある
 

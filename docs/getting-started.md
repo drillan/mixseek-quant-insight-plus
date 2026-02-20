@@ -6,6 +6,7 @@ mixseek-quant-insight-plus を使い始めるためのガイドです。
 
 | 要件 | 説明 |
 |------|------|
+| [uv](https://docs.astral.sh/uv/) | 推奨インストーラー (`uv tool install` で使用) |
 | Python 3.13+ | 実行環境 |
 | Claude Code CLI | `claude` コマンドがインストール・認証済みであること |
 | [mixseek-plus](https://github.com/drillan/mixseek-plus) | `patch_core()`, `create_authenticated_model()` |

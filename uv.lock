@@ -401,8 +401,8 @@ wheels = [
 
 [[package]]
 name = "claude-agent-sdk"
-version = "0.1.38"
-source = { git = "https://github.com/drillan/claude-agent-sdk-python.git?branch=fix%2Fcombined-fixes#313deaa57e4299da1c914a17dee8d3081d1e25aa" }
+version = "0.1.39"
+source = { git = "https://github.com/drillan/claude-agent-sdk-python.git?branch=fix%2Fcombined-fixes#42967e68c3a19bed3590895cf7b6d4f6c0b37510" }
 dependencies = [
     { name = "anyio" },
     { name = "mcp" },
@@ -410,8 +410,8 @@ dependencies = [
 
 [[package]]
 name = "claudecode-model"
-version = "0.0.23"
-source = { git = "https://github.com/drillan/claudecode-model.git#f3ed60b0b1f83d96f461a5a6fee023ea3cd57ef5" }
+version = "0.0.24"
+source = { git = "https://github.com/drillan/claudecode-model.git#5a56fa4d38a0deb0361482e05b2fc73b891db436" }
 dependencies = [
     { name = "claude-agent-sdk" },
     { name = "dacite" },
@@ -1671,8 +1671,8 @@ wheels = [
 
 [[package]]
 name = "mixseek-plus"
-version = "0.0.5"
-source = { git = "https://github.com/drillan/mixseek-plus#16d838d01229e737170823c9bed86a9e51b56092" }
+version = "0.0.6"
+source = { git = "https://github.com/drillan/mixseek-plus#3b81f76c680d2f33267b1da4f6ff18aa210e6269" }
 dependencies = [
     { name = "claude-agent-sdk" },
     { name = "claudecode-model" },
@@ -1702,7 +1702,7 @@ dependencies = [
 
 [[package]]
 name = "mixseek-quant-insight-plus"
-version = "0.0.2"
+version = "0.0.3"
 source = { editable = "." }
 dependencies = [
     { name = "mixseek-plus" },

@@ -193,6 +193,8 @@ config = "configs/agents/teams/claudecode_team.toml"
 
 設定項目の詳細は [Configuration Reference](configuration-reference.md) を参照してください。
 
+複数チームの構成パターンは [実行設計ガイド](execution-guide.md) の「マルチチーム構成パターン」を参照してください。
+
 ## スクリプト埋め込み機能
 
 `ClaudeCodeLocalCodeExecutorAgent` は、過去のラウンドで作成されたスクリプトをプロンプトに自動埋め込みします。
@@ -324,6 +326,8 @@ qip team "trainデータの基本統計量を分析してください" \
 qip exec "株価シグナル生成" \
     --config $MIXSEEK_WORKSPACE/configs/orchestrator.toml
 ```
+
+タスク文の効果的な書き方と実践例は [実行設計ガイド](execution-guide.md) を参照してください。
 
 ### CLI の自動登録
 

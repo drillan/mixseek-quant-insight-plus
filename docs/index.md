@@ -21,6 +21,7 @@ getting-started
 system-flow
 data-specification
 user-guide
+execution-guide
 ```
 
 ```{toctree}

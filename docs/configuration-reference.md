@@ -280,6 +280,8 @@ evaluator_config = "configs/evaluator.toml"
 config = "configs/agents/teams/claudecode_team.toml"
 ```
 
+複数チームの構成パターンは [実行設計ガイド](execution-guide.md) を参照してください。
+
 ## コンペティション設定（competition.toml）
 
 ### `[competition]` セクション

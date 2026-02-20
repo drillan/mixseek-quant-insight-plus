@@ -128,6 +128,70 @@ module_path = "quant_insight.agents.local_code_executor.output_models"
 class_name = "SubmitterOutput"
 ```
 
+## ClaudeCode プリセット設定（claudecode.toml）
+
+ClaudeCode プロバイダのツール権限を名前付きプリセットとして定義します。プリセットファイルは `configs/presets/claudecode.toml` に配置します。
+
+### プリセットの参照
+
+チーム設定の `[team.leader.tool_settings.claudecode]` セクションで `preset` キーを指定します。
+
+```toml
+[team.leader.tool_settings.claudecode]
+preset = "delegate_only"
+```
+
+### プリセット項目
+
+各プリセットセクション（例: `[delegate_only]`）で設定可能な項目です。
+
+| 項目 | 型 | 必須 | 説明 |
+|------|-----|------|------|
+| `permission_mode` | `str` | はい | ツール権限モード（例: `"bypassPermissions"`） |
+| `disallowed_tools` | `list[str]` | いいえ | ブロックするツール名のリスト |
+
+### 組み込みプリセット
+
+#### `delegate_only`
+
+Leader がメンバーへの作業委譲のみを行うプリセットです。コーディングツールとメタツールの両方をブロックし、MCP 経由のメンバーツールのみ使用可能にします。
+
+```toml
+[delegate_only]
+permission_mode = "bypassPermissions"
+disallowed_tools = [
+  # コーディングツール
+  "Bash", "Write", "Edit", "Read", "Glob", "Grep",
+  "WebFetch", "WebSearch", "NotebookEdit", "Task",
+  # メタツール（承認者不在で無限ループを引き起こす）
+  "EnterPlanMode", "ExitPlanMode", "AskUserQuestion",
+  # タスク・チーム管理（リーダーには不要）
+  "TodoWrite", "TaskCreate", "TaskUpdate", "TaskList", "TaskGet",
+  "TeamCreate", "TeamDelete", "SendMessage",
+]
+```
+
+> **Note**: `Skill` はリーダーの能力拡張に有用なため、ブロック対象外です。
+
+#### `full_access`
+
+全ツールへのアクセスを許可するプリセットです。
+
+```toml
+[full_access]
+permission_mode = "bypassPermissions"
+```
+
+#### `read_only`
+
+ファイルの読み取りのみを許可するプリセットです。
+
+```toml
+[read_only]
+permission_mode = "bypassPermissions"
+disallowed_tools = ["Write", "Edit", "NotebookEdit"]
+```
+
 ## チーム設定（team.toml）
 
 ### `[team]` セクション
@@ -144,6 +208,14 @@ class_name = "SubmitterOutput"
 | `model` | `str` | はい | — | モデルID（例: `claudecode:claude-opus-4-6`） |
 | `temperature` | `float` | いいえ | モデル依存 | 生成の温度パラメータ |
 | `system_instruction` | `str` | いいえ | `""` | Leader への指示（複数行可） |
+
+### `[team.leader.tool_settings.claudecode]` セクション
+
+| 項目 | 型 | 必須 | 説明 |
+|------|-----|------|------|
+| `preset` | `str` | いいえ | プリセット名（`claudecode.toml` で定義） |
+
+プリセット以外の項目をローカルオーバーライドとして追加できます。
 
 ### `[[team.members]]` セクション
 
@@ -166,6 +238,9 @@ system_instruction = """
 あなたはチームのリーダーです。
 メンバーに指示を出し、株価シグナル生成を目指します。
 """
+
+[team.leader.tool_settings.claudecode]
+preset = "delegate_only"
 
 [[team.members]]
 config = "configs/agents/members/train_analyzer_claudecode.toml"
@@ -314,6 +389,8 @@ $MIXSEEK_WORKSPACE/
 │   ├── competition.toml
 │   ├── evaluator.toml
 │   ├── orchestrator.toml
+│   ├── presets/
+│   │   └── claudecode.toml
 │   └── agents/
 │       ├── members/
 │       │   ├── train_analyzer_claudecode.toml

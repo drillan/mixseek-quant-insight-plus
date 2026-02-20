@@ -1,0 +1,37 @@
+# ClaudeCode Tool Settings Presets
+#
+# Define named presets for ClaudeCode tool configurations.
+# These presets can be referenced in team configurations using:
+#
+#   [team.leader.tool_settings]
+#   claudecode = { preset = "delegate_only" }
+#
+#   # Or with local overrides:
+#   claudecode = { preset = "delegate_only", max_turns = 50 }
+
+
+[delegate_only]
+# Delegation-only preset: ClaudeCode can only delegate tasks to member agents
+# All direct tool access is disabled
+permission_mode = "bypassPermissions"
+disallowed_tools = [
+  # Coding tools
+  "Bash", "Write", "Edit", "Read", "Glob", "Grep",
+  "WebFetch", "WebSearch", "NotebookEdit", "Task",
+  # Meta tools (cause infinite loops without an approver)
+  "EnterPlanMode", "ExitPlanMode", "AskUserQuestion",
+  # Task/team management (not needed for leader delegation)
+  "TodoWrite", "TaskCreate", "TaskUpdate", "TaskList", "TaskGet",
+  "TeamCreate", "TeamDelete", "SendMessage",
+]
+
+
+[full_access]
+# Full access preset: ClaudeCode has unrestricted access to all tools
+permission_mode = "bypassPermissions"
+
+
+[read_only]
+# Read-only preset: ClaudeCode can read files but cannot write or edit
+permission_mode = "bypassPermissions"
+disallowed_tools = ["Write", "Edit", "NotebookEdit"]

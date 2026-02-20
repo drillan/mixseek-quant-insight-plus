@@ -190,6 +190,8 @@ qip exec "株価シグナル生成" --config $MIXSEEK_WORKSPACE/configs/orchestr
 
 設定の詳細は [Configuration Reference](configuration-reference.md) を参照してください。
 
+実践的なタスク例とマルチチーム構成パターンは [実行設計ガイド](execution-guide.md) を参照してください。
+
 ## 4. 評価
 
 ### 4.1 評価フロー
@@ -226,4 +228,5 @@ flowchart TB
 - [Getting Started](getting-started.md) -- インストールと初期セットアップの手順
 - [データ仕様](data-specification.md) -- データスキーマ、リターン計算、分割、評価の詳細
 - [User Guide](user-guide.md) -- エージェント設定、チーム設定、スクリプト埋め込み機能
+- [実行設計ガイド](execution-guide.md) -- タスク設計、マルチチーム構成、プロンプトアーキテクチャ
 - [Configuration Reference](configuration-reference.md) -- 全設定ファイルのリファレンス

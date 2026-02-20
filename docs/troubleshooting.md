@@ -162,6 +162,38 @@ disallowed_tools = [
 ]
 ```
 
+### Leader がメンバーに委任せず自力でコードを生成する
+
+`delegate_only` プリセットが正しく設定されているにもかかわらず、Leader がメンバーツールを呼び出さずテキストでコードを直接生成する場合があります。
+
+**症状:**
+
+- `round_history.member_submissions_record` の `total_count` が `0`
+- Leader がテキストで Python コードを出力し、エラー修正だけでラウンドを消費する
+- メタツールの呼び出しは発生しない
+
+**原因:**
+
+Leader の `system_instruction` に MCP ツールの実名が記載されていないため、モデルがツールの存在を認識できません。
+
+**対処法:**
+
+チーム設定の `system_instruction` で、各メンバーの MCP ツール名を明示的に記載してください。
+
+```toml
+system_instruction = """
+## メンバー
+- train-analyzer:
+    - ツール名: `mcp__pydantic_tools__delegate_to_train-analyzer`
+    - タスクの指示を `task` パラメータ（文字列）で渡す
+- submission-creator:
+    - ツール名: `mcp__pydantic_tools__delegate_to_submission-creator`
+    - タスクの指示を `task` パラメータ（文字列）で渡す
+"""
+```
+
+MCP ツール名の規則: `mcp__pydantic_tools__delegate_to_{agent_name}`（`agent_name` はメンバー設定の `[agent] name`）
+
 ## 実行時エラー
 
 ### タイムアウト

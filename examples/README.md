@@ -35,7 +35,7 @@ qip setup -w /path/to/workspace
 
 ```bash
 export MIXSEEK_WORKSPACE=/path/to/workspace
-quant-insight data split --config $MIXSEEK_WORKSPACE/configs/competition.toml
+qip data split --config $MIXSEEK_WORKSPACE/configs/competition.toml
 ```
 
 ### 4. 環境変数を設定

@@ -379,6 +379,7 @@ qip data split --config $MIXSEEK_WORKSPACE/configs/competition.toml
 configs/
 ├── competition.toml               # コンペティション定義（データ分割設定）
 ├── evaluator.toml                 # 評価メトリクス設定
+├── judgment.toml                  # ラウンド継続判定設定
 ├── orchestrator.toml              # 本番実行用（exec コマンド）
 └── agents/
     ├── members/

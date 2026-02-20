@@ -26,33 +26,23 @@ class TestPlusExamplesConfigsDir:
         toml_files = list(_PLUS_EXAMPLES_CONFIGS_DIR.rglob("*.toml"))
         assert len(toml_files) > 0
 
-    def test_examples_configs_has_orchestrator(self) -> None:
-        """orchestrator.toml が claudecode_team を参照していること。"""
+    @pytest.mark.parametrize(
+        ("filename", "expected_strings"),
+        [
+            ("orchestrator.toml", ["claudecode_team"]),
+            ("judgment.toml", ["claudecode:"]),
+            ("evaluator.toml", ["default_model", "claudecode:"]),
+        ],
+    )
+    def test_examples_config_contains_expected_content(self, filename: str, expected_strings: list[str]) -> None:
+        """各設定ファイルが存在し期待する内容を含むこと。"""
         from quant_insight_plus.cli import _PLUS_EXAMPLES_CONFIGS_DIR
 
-        orchestrator = _PLUS_EXAMPLES_CONFIGS_DIR / "orchestrator.toml"
-        assert orchestrator.exists()
-        content = orchestrator.read_text()
-        assert "claudecode_team" in content
-
-    def test_examples_configs_has_judgment(self) -> None:
-        """judgment.toml が存在し claudecode モデルを使用すること。"""
-        from quant_insight_plus.cli import _PLUS_EXAMPLES_CONFIGS_DIR
-
-        judgment = _PLUS_EXAMPLES_CONFIGS_DIR / "judgment.toml"
-        assert judgment.exists()
-        content = judgment.read_text()
-        assert "claudecode:" in content
-
-    def test_examples_configs_evaluator_has_default_model(self) -> None:
-        """evaluator.toml に default_model が設定されていること。"""
-        from quant_insight_plus.cli import _PLUS_EXAMPLES_CONFIGS_DIR
-
-        evaluator = _PLUS_EXAMPLES_CONFIGS_DIR / "evaluator.toml"
-        assert evaluator.exists()
-        content = evaluator.read_text()
-        assert "default_model" in content
-        assert "claudecode:" in content
+        cfg = _PLUS_EXAMPLES_CONFIGS_DIR / filename
+        assert cfg.exists()
+        content = cfg.read_text()
+        for s in expected_strings:
+            assert s in content
 
 
 class TestOverlayClaudecodeConfigs:
@@ -86,28 +76,26 @@ class TestOverlayClaudecodeConfigs:
         assert (agents_dir / "members" / "train_analyzer_claudecode.toml").exists()
         assert (agents_dir / "members" / "submission_creator_claudecode.toml").exists()
 
-    def test_copies_judgment_config(self, mock_workspace_env: Path) -> None:
-        """judgment.toml がコピーされること。"""
+    @pytest.mark.parametrize(
+        ("filename", "expected_strings"),
+        [
+            ("judgment.toml", ["claudecode:"]),
+            ("evaluator.toml", ["default_model", "claudecode:"]),
+        ],
+    )
+    def test_copies_config_with_expected_content(
+        self, mock_workspace_env: Path, filename: str, expected_strings: list[str]
+    ) -> None:
+        """設定ファイルが期待する内容でコピーされること。"""
         from quant_insight_plus.cli import _overlay_claudecode_configs
 
         _overlay_claudecode_configs(mock_workspace_env)
 
-        judgment = mock_workspace_env / "configs" / "judgment.toml"
-        assert judgment.exists()
-        content = judgment.read_text()
-        assert "claudecode:" in content
-
-    def test_copies_evaluator_with_default_model(self, mock_workspace_env: Path) -> None:
-        """evaluator.toml が default_model 付きでコピーされること。"""
-        from quant_insight_plus.cli import _overlay_claudecode_configs
-
-        _overlay_claudecode_configs(mock_workspace_env)
-
-        evaluator = mock_workspace_env / "configs" / "evaluator.toml"
-        assert evaluator.exists()
-        content = evaluator.read_text()
-        assert "default_model" in content
-        assert "claudecode:" in content
+        cfg = mock_workspace_env / "configs" / filename
+        assert cfg.exists()
+        content = cfg.read_text()
+        for s in expected_strings:
+            assert s in content
 
     def test_creates_subdirectories(self, mock_workspace_env: Path) -> None:
         """サブディレクトリが自動作成されること。"""

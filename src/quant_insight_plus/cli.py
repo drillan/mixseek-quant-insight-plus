@@ -94,23 +94,25 @@ def _create_data_dirs(workspace: Path) -> list[Path]:
 
 def _print_next_steps(workspace: Path) -> None:
     """セットアップ完了後の次ステップ案内を出力。"""
-    typer.echo("")
-    typer.echo("=== セットアップ完了 ===")
-    typer.echo("")
-    typer.echo("次のステップ:")
-    typer.echo("  1. データファイルを配置してください:")
-    typer.echo(f"     {workspace}/data/inputs/ohlcv/  (ohlcv.parquet)")
-    typer.echo(f"     {workspace}/data/inputs/returns/ (returns.parquet)")
-    typer.echo(f"     {workspace}/data/inputs/master/  (master.parquet)")
-    typer.echo("")
-    typer.echo("  2. データを分割:")
-    typer.echo(f"     qip data split --config {workspace}/configs/competition.toml")
-    typer.echo("")
-    typer.echo("  3. 環境変数を設定:")
-    typer.echo(f"     export MIXSEEK_WORKSPACE={workspace}")
-    typer.echo("")
-    typer.echo("  4. 実行:")
-    typer.echo(f'     qip team "データ分析タスク" --config {workspace}/configs/agents/teams/claudecode_team.toml')
+    typer.echo(
+        f"""
+=== セットアップ完了 ===
+
+次のステップ:
+  1. データファイルを配置してください:
+     {workspace}/data/inputs/ohlcv/  (ohlcv.parquet)
+     {workspace}/data/inputs/returns/ (returns.parquet)
+     {workspace}/data/inputs/master/  (master.parquet)
+
+  2. データを分割:
+     qip data split --config {workspace}/configs/competition.toml
+
+  3. 環境変数を設定:
+     export MIXSEEK_WORKSPACE={workspace}
+
+  4. 実行:
+     qip team "データ分析タスク" --config {workspace}/configs/agents/teams/claudecode_team.toml"""
+    )
 
 
 @core_app.command(name="setup")
@@ -122,7 +124,7 @@ def setup(
         help="ワークスペースパス（未指定時は$MIXSEEK_WORKSPACE）",
     ),
 ) -> None:
-    """環境を一括セットアップ（mixseek init → config init → db init → ClaudeCode 設定適用）"""
+    """環境を一括セットアップ（mixseek init → config init → db init → ClaudeCode 設定適用 → データディレクトリ作成）"""
     quant_setup(workspace=workspace)
 
     ws = workspace or get_workspace()

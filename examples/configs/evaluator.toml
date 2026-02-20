@@ -1,3 +1,5 @@
+default_model = "claudecode:claude-sonnet-4-6"
+
 [[metrics]]
 name = "CorrelationSharpeRatio"
 weight = 1.0

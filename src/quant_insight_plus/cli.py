@@ -72,6 +72,47 @@ def _overlay_claudecode_configs(workspace: Path) -> list[Path]:
     return copied_files
 
 
+_DATA_INPUT_DIRS = ("ohlcv", "returns", "master")
+
+
+def _create_data_dirs(workspace: Path) -> list[Path]:
+    """data/inputs/ 配下のデータディレクトリを作成。
+
+    Args:
+        workspace: ワークスペースパス
+
+    Returns:
+        作成されたディレクトリのリスト
+    """
+    created: list[Path] = []
+    for name in _DATA_INPUT_DIRS:
+        d = workspace / "data" / "inputs" / name
+        d.mkdir(parents=True, exist_ok=True)
+        created.append(d)
+    return created
+
+
+def _print_next_steps(workspace: Path) -> None:
+    """セットアップ完了後の次ステップ案内を出力。"""
+    typer.echo("")
+    typer.echo("=== セットアップ完了 ===")
+    typer.echo("")
+    typer.echo("次のステップ:")
+    typer.echo("  1. データファイルを配置してください:")
+    typer.echo(f"     {workspace}/data/inputs/ohlcv/  (ohlcv.parquet)")
+    typer.echo(f"     {workspace}/data/inputs/returns/ (returns.parquet)")
+    typer.echo(f"     {workspace}/data/inputs/master/  (master.parquet)")
+    typer.echo("")
+    typer.echo("  2. データを分割:")
+    typer.echo(f"     qip data split --config {workspace}/configs/competition.toml")
+    typer.echo("")
+    typer.echo("  3. 環境変数を設定:")
+    typer.echo(f"     export MIXSEEK_WORKSPACE={workspace}")
+    typer.echo("")
+    typer.echo("  4. 実行:")
+    typer.echo(f'     qip team "データ分析タスク" --config {workspace}/configs/agents/teams/claudecode_team.toml')
+
+
 @core_app.command(name="setup")
 def setup(
     workspace: Path | None = typer.Option(
@@ -87,6 +128,11 @@ def setup(
     ws = workspace or get_workspace()
     copied = _overlay_claudecode_configs(ws)
     typer.echo(f"ClaudeCode エージェント設定を適用: {len(copied)} ファイルを上書き")
+
+    _create_data_dirs(ws)
+    typer.echo("データディレクトリを作成: data/inputs/{ohlcv,returns,master}")
+
+    _print_next_steps(ws)
 
 
 try:

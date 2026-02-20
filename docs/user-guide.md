@@ -340,18 +340,18 @@ CLI は起動時に以下を自動実行します:
 
 ## ワークスペースセットアップ
 
-`examples/setup.sh` を使用してワークスペースを初期化できます。
+`qip setup` コマンドでワークスペースを初期化できます。
 
 ### セットアップ手順
 
 ```bash
-./examples/setup.sh /path/to/workspace
+qip setup -w /path/to/workspace
 ```
 
-セットアップスクリプトの実行内容:
+実行内容:
 
 1. `mixseek init` でワークスペース基本構造を作成
-2. `configs/` 以下の TOML 設定ファイルをコピー
+2. `configs/` 以下の TOML 設定ファイルをコピー（ClaudeCode 設定を自動適用）
 3. `qip db init` で DuckDB スキーマを初期化
 4. `data/inputs/` ディレクトリを作成
 

@@ -1,6 +1,6 @@
 [project]
 name = "mixseek-quant-insight-plus"
-version = "0.0.1"
+version = "0.0.2"
 description = "ClaudeCode integration for mixseek-quant-insight"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -41,8 +41,8 @@ package = true
 module-name = "quant_insight_plus"
 
 [tool.uv.sources]
-mixseek-plus = { path = "../mixseek-plus", editable = true }
-mixseek-quant-insight = { path = "../mixseek-quant-insight", editable = true }
+mixseek-plus = { git = "https://github.com/drillan/mixseek-plus" }
+mixseek-quant-insight = { git = "https://github.com/mixseek/mixseek-quant-insight" }
 
 [tool.ruff]
 line-length = 119

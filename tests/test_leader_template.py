@@ -10,7 +10,7 @@ import tomllib
 
 import pytest
 
-MCP_TOOL_PREFIX = "mcp__pydantic_tools__"
+MCP_TOOL_PREFIX = "mcp__team__"
 DELEGATE_TOOL_PATTERN = "delegate_to_{agent_name}"
 
 

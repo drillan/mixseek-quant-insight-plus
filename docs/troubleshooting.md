@@ -184,15 +184,15 @@ Leader の `system_instruction` に MCP ツールの実名が記載されてい�
 system_instruction = """
 ## メンバー
 - train-analyzer:
-    - ツール名: `mcp__pydantic_tools__delegate_to_train-analyzer`
+    - ツール名: `mcp__team__delegate_to_train-analyzer`
     - タスクの指示を `task` パラメータ（文字列）で渡す
 - submission-creator:
-    - ツール名: `mcp__pydantic_tools__delegate_to_submission-creator`
+    - ツール名: `mcp__team__delegate_to_submission-creator`
     - タスクの指示を `task` パラメータ（文字列）で渡す
 """
 ```
 
-MCP ツール名の規則: `mcp__pydantic_tools__delegate_to_{agent_name}`（`agent_name` はメンバー設定の `[agent] name`）
+MCP ツール名の規則: `mcp__team__delegate_to_{agent_name}`（`agent_name` はメンバー設定の `[agent] name`）
 
 ## 実行時エラー
 

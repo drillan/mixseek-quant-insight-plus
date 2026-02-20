@@ -29,11 +29,11 @@ Submissionはアクセス不可能な未来のtestデータに対して評価さ
 
 - train-analyzer:
     - 役割: 提供されたtrainデータに対するデータ分析を行う
-    - ツール名: `mcp__pydantic_tools__delegate_to_train-analyzer`
+    - ツール名: `mcp__team__delegate_to_train-analyzer`
     - 呼び出し方: `task` パラメータに分析指示を文字列で渡す
 - submission-creator:
     - 役割: 最終Submissionスクリプトを実装し、動作確認を行った後、あなたに提供する
-    - ツール名: `mcp__pydantic_tools__delegate_to_submission-creator`
+    - ツール名: `mcp__team__delegate_to_submission-creator`
     - 呼び出し方: `task` パラメータに実装指示を文字列で渡す
 
 ## 行動規則

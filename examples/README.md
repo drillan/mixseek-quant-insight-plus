@@ -11,13 +11,13 @@
 ### 1. ワークスペースを初期化
 
 ```bash
-./setup.sh /path/to/workspace
+qip setup -w /path/to/workspace
 ```
 
 実行内容:
 1. `mixseek init` でワークスペース基本構造を作成
-2. `configs/` 以下の TOML 設定ファイルをコピー
-3. `quant-insight db init` で DuckDB スキーマを初期化
+2. `configs/` 以下の TOML 設定ファイルをコピー（ClaudeCode 設定を自動適用）
+3. `qip db init` で DuckDB スキーマを初期化
 4. `data/inputs/` ディレクトリを作成
 
 ### 2. データを配置
@@ -35,7 +35,7 @@
 
 ```bash
 export MIXSEEK_WORKSPACE=/path/to/workspace
-quant-insight data split --config $MIXSEEK_WORKSPACE/configs/competition.toml
+qip data split --config $MIXSEEK_WORKSPACE/configs/competition.toml
 ```
 
 ### 4. 環境変数を設定
@@ -73,6 +73,7 @@ qip member "trainデータのカラム一覧を確認してください" \
 configs/
 ├── competition.toml               # コンペティション定義（データ分割設定）
 ├── evaluator.toml                 # 評価メトリクス設定
+├── judgment.toml                  # ラウンド継続判定設定
 ├── orchestrator.toml              # 本番実行用（exec コマンド）
 └── agents/
     ├── members/

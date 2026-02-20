@@ -1,0 +1,15 @@
+# MixSeek Judgment Configuration
+# LLM-as-a-Judge によるラウンド継続判定設定
+
+# LLM model for improvement judgment
+# Format: "provider:model-name"
+model = "claudecode:claude-sonnet-4-6"
+
+# Temperature for LLM calls (0.0 = deterministic, recommended for judgment)
+temperature = 0.0
+
+# Maximum retry attempts for API calls
+max_retries = 3
+
+# Timeout in seconds for judgment API calls
+timeout_seconds = 60

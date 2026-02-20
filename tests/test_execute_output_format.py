@@ -4,11 +4,14 @@ SubmitterOutput が JSON ではなく Markdown 形式にフォーマットされ
 Evaluator の extract_code_from_submission() でコード抽出できることも確認。
 """
 
+import hashlib
+import inspect
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from mixseek.models.member_agent import MemberAgentResult, ResultStatus
 from pydantic import BaseModel
+from quant_insight.agents.local_code_executor.agent import LocalCodeExecutorAgent
 from quant_insight.agents.local_code_executor.output_models import SubmitterOutput
 from quant_insight.evaluator.submission_parser import extract_code_from_submission
 
@@ -32,19 +35,22 @@ def generate_signal(
 SAMPLE_DESCRIPTION = "終値の前日比変化率をシグナルとして使用"
 
 
+@pytest.fixture
+def submitter_output() -> SubmitterOutput:
+    """テスト用の SubmitterOutput。"""
+    return SubmitterOutput(submission=SAMPLE_CODE, description=SAMPLE_DESCRIPTION)
+
+
 class TestFormatOutputContent:
     """_format_output_content() の単体テスト。"""
 
     def test_submitter_output_formatted_as_markdown(
         self,
         agent: ClaudeCodeLocalCodeExecutorAgent,
+        submitter_output: SubmitterOutput,
     ) -> None:
         """SubmitterOutput が Markdown 形式にフォーマットされること。"""
-        output = SubmitterOutput(
-            submission=SAMPLE_CODE,
-            description=SAMPLE_DESCRIPTION,
-        )
-        result = agent._format_output_content(output)
+        result = agent._format_output_content(submitter_output)
 
         assert "## Submissionの概要" in result
         assert "## Submissionスクリプト" in result
@@ -54,13 +60,10 @@ class TestFormatOutputContent:
     def test_submitter_output_code_verbatim(
         self,
         agent: ClaudeCodeLocalCodeExecutorAgent,
+        submitter_output: SubmitterOutput,
     ) -> None:
         """submission フィールドのコードがエスケープなしで含まれること。"""
-        output = SubmitterOutput(
-            submission=SAMPLE_CODE,
-            description=SAMPLE_DESCRIPTION,
-        )
-        result = agent._format_output_content(output)
+        result = agent._format_output_content(submitter_output)
 
         # JSON エスケープ（\\n）ではなく、生のコードが含まれる
         assert SAMPLE_CODE in result
@@ -92,13 +95,10 @@ class TestFormatOutputContent:
     def test_evaluator_can_extract_code_from_formatted_output(
         self,
         agent: ClaudeCodeLocalCodeExecutorAgent,
+        submitter_output: SubmitterOutput,
     ) -> None:
         """フォーマット結果から Evaluator がコードを抽出できること。"""
-        output = SubmitterOutput(
-            submission=SAMPLE_CODE,
-            description=SAMPLE_DESCRIPTION,
-        )
-        formatted = agent._format_output_content(output)
+        formatted = agent._format_output_content(submitter_output)
 
         # Evaluator のコード抽出関数で抽出できることを確認
         extracted_code = extract_code_from_submission(formatted)
@@ -115,17 +115,13 @@ class TestExecuteOutputFormat:
         self,
         mock_get_store: MagicMock,
         agent: ClaudeCodeLocalCodeExecutorAgent,
+        submitter_output: SubmitterOutput,
     ) -> None:
         """execute() が SubmitterOutput を Markdown 形式で返すこと。"""
         mock_store = MagicMock()
         mock_store.list_scripts = AsyncMock(return_value=[])
         mock_store.save_script = AsyncMock()
         mock_get_store.return_value = mock_store
-
-        submitter_output = SubmitterOutput(
-            submission=SAMPLE_CODE,
-            description=SAMPLE_DESCRIPTION,
-        )
 
         mock_result = MagicMock()
         mock_result.output = submitter_output
@@ -145,13 +141,9 @@ class TestExecuteOutputFormat:
     async def test_execute_preserves_script_saving(
         self,
         agent: ClaudeCodeLocalCodeExecutorAgent,
+        submitter_output: SubmitterOutput,
     ) -> None:
         """execute() で _save_output_scripts() が呼ばれること。"""
-        submitter_output = SubmitterOutput(
-            submission=SAMPLE_CODE,
-            description=SAMPLE_DESCRIPTION,
-        )
-
         mock_result = MagicMock()
         mock_result.output = submitter_output
         mock_result.all_messages.return_value = []
@@ -190,3 +182,27 @@ class TestExecuteOutputFormat:
         assert isinstance(result, MemberAgentResult)
         assert result.status == ResultStatus.ERROR
         assert "テストエラー" in result.content
+
+
+class TestParentExecuteDrift:
+    """親クラス execute() のドリフト検出テスト。"""
+
+    # mixseek-quant-insight==0.1.0 の LocalCodeExecutorAgent.execute() ソースハッシュ。
+    # 依存ライブラリ更新時にこのテストが失敗した場合、
+    # ClaudeCodeLocalCodeExecutorAgent.execute() を親クラスと照合して更新すること。
+    _EXPECTED_HASH = "53ee25cfdacb8edbd945d4faf2bc3d68785df602f8653d72b1ac20a935035bdc"
+
+    def test_parent_execute_source_not_drifted(self) -> None:
+        """親クラスの execute() ソースが想定と一致すること。"""
+        src = inspect.getsource(LocalCodeExecutorAgent.execute)
+        digest = hashlib.sha256(src.encode()).hexdigest()
+
+        if not self._EXPECTED_HASH:
+            pytest.fail(f"初回実行: 親クラス execute() の SHA-256 ハッシュを記録してください: {digest}")
+
+        assert digest == self._EXPECTED_HASH, (
+            f"親クラス LocalCodeExecutorAgent.execute() が変更されています。"
+            f"ClaudeCodeLocalCodeExecutorAgent.execute() を確認してハッシュを更新してください。"
+            f"\n  Expected: {self._EXPECTED_HASH}"
+            f"\n  Actual:   {digest}"
+        )

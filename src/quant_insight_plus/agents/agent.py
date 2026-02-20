@@ -24,10 +24,9 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
     """ClaudeCode版 LocalCodeExecutorAgent。
 
     LocalCodeExecutorAgent を継承し、以下をオーバーライド:
-    - __init__: create_authenticated_model() でモデルを解決（claudecode: プレフィックス対応）
+    - __init__: create_authenticated_model() でモデルを解決し、ツールセットなしで Agent を構築
     - _enrich_task_with_existing_scripts(): スクリプト内容をプロンプトに埋め込む
     - execute(): SubmitterOutput を Markdown 形式にフォーマットしてリーダーに返す
-    - pydantic-ai ツールセットは登録しない（Claude Code 組み込みツールに委ねる）
     """
 
     def __init__(self, config: MemberAgentConfig) -> None:
@@ -99,7 +98,7 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
         Evaluator がコードを正しく抽出できる。
 
         NOTE: 親クラス LocalCodeExecutorAgent.execute()
-        (quant_insight==0.0.3) のロジックを複製し、シリアライズ部分のみ変更。
+        (mixseek-quant-insight==0.1.0) のロジックを複製し、シリアライズ部分のみ変更。
         依存ライブラリ更新時にドリフトする可能性があるため注意。
 
         Args:

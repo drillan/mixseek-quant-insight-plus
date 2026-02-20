@@ -8,7 +8,7 @@ mixseek-plus CLI をラップし、ClaudeCode 版 quant-insight エージェン�
 2. mixseek-plus のエージェント登録
 3. quant-insight-plus のエージェント登録
 4. mixseek-core CLI アプリのインポート
-5. quant-insight サブコマンド（setup, data, db, export）の統合
+5. quant-insight サブコマンド（data, db, export）の統合
 """
 
 import shutil

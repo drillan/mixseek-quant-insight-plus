@@ -14,7 +14,16 @@
 # Delegation-only preset: ClaudeCode can only delegate tasks to member agents
 # All direct tool access is disabled
 permission_mode = "bypassPermissions"
-disallowed_tools = ["Bash", "Write", "Edit", "Read", "Glob", "Grep", "WebFetch", "WebSearch", "NotebookEdit", "Task"]
+disallowed_tools = [
+  # Coding tools
+  "Bash", "Write", "Edit", "Read", "Glob", "Grep",
+  "WebFetch", "WebSearch", "NotebookEdit", "Task",
+  # Meta tools (cause infinite loops without an approver)
+  "EnterPlanMode", "ExitPlanMode", "AskUserQuestion",
+  # Task/team management (not needed for leader delegation)
+  "TodoWrite", "TaskCreate", "TaskUpdate", "TaskList", "TaskGet",
+  "TeamCreate", "TeamDelete", "SendMessage",
+]
 
 
 [full_access]

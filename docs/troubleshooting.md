@@ -130,6 +130,38 @@ print(AnalyzerOutput.model_json_schema())
 | `AnalyzerOutput` | `quant_insight.agents.local_code_executor.output_models` | データ分析 |
 | `SubmitterOutput` | `quant_insight.agents.local_code_executor.output_models` | Submission 作成 |
 
+## Leader の動作異常
+
+### Leader がメンバーツールを使用せず EnterPlanMode/AskUserQuestion ループに入る
+
+`delegate_only` プリセットでメタツール（`EnterPlanMode`, `AskUserQuestion`, `ExitPlanMode`）がブロックされていない場合、Leader がプランモードに入り承認を永久に待つサイクルに陥ります。
+
+**症状:**
+
+- 全ラウンドでスコアが `-100.0`（`CorrelationSharpeRatio.INVALID_SUBMISSION_SCORE`）
+- セッションログに `EnterPlanMode`, `AskUserQuestion`, `ExitPlanMode` の呼び出しのみが記録される
+- MCP 経由のメンバーツール呼び出しが 0 回
+- `Leader did not call any member tools` 警告
+
+**対処法:**
+
+`configs/presets/claudecode.toml` の `delegate_only` プリセットでメタツールがブロックされていることを確認してください。
+
+```toml
+[delegate_only]
+permission_mode = "bypassPermissions"
+disallowed_tools = [
+  # コーディングツール
+  "Bash", "Write", "Edit", "Read", "Glob", "Grep",
+  "WebFetch", "WebSearch", "NotebookEdit", "Task",
+  # メタツール（承認者不在で無限ループを引き起こす）
+  "EnterPlanMode", "ExitPlanMode", "AskUserQuestion",
+  # タスク・チーム管理（リーダーには不要）
+  "TodoWrite", "TaskCreate", "TaskUpdate", "TaskList", "TaskGet",
+  "TeamCreate", "TeamDelete", "SendMessage",
+]
+```
+
 ## 実行時エラー
 
 ### タイムアウト

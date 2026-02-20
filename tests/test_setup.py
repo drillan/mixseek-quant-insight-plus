@@ -26,14 +26,23 @@ class TestPlusExamplesConfigsDir:
         toml_files = list(_PLUS_EXAMPLES_CONFIGS_DIR.rglob("*.toml"))
         assert len(toml_files) > 0
 
-    def test_examples_configs_has_orchestrator(self) -> None:
-        """orchestrator.toml が claudecode_team を参照していること。"""
+    @pytest.mark.parametrize(
+        ("filename", "expected_strings"),
+        [
+            ("orchestrator.toml", ["claudecode_team"]),
+            ("judgment.toml", ["claudecode:"]),
+            ("evaluator.toml", ["default_model", "claudecode:"]),
+        ],
+    )
+    def test_examples_config_contains_expected_content(self, filename: str, expected_strings: list[str]) -> None:
+        """各設定ファイルが存在し期待する内容を含むこと。"""
         from quant_insight_plus.cli import _PLUS_EXAMPLES_CONFIGS_DIR
 
-        orchestrator = _PLUS_EXAMPLES_CONFIGS_DIR / "orchestrator.toml"
-        assert orchestrator.exists()
-        content = orchestrator.read_text()
-        assert "claudecode_team" in content
+        cfg = _PLUS_EXAMPLES_CONFIGS_DIR / filename
+        assert cfg.exists()
+        content = cfg.read_text()
+        for s in expected_strings:
+            assert s in content
 
 
 class TestOverlayClaudecodeConfigs:
@@ -66,6 +75,27 @@ class TestOverlayClaudecodeConfigs:
         assert (agents_dir / "teams" / "claudecode_team.toml").exists()
         assert (agents_dir / "members" / "train_analyzer_claudecode.toml").exists()
         assert (agents_dir / "members" / "submission_creator_claudecode.toml").exists()
+
+    @pytest.mark.parametrize(
+        ("filename", "expected_strings"),
+        [
+            ("judgment.toml", ["claudecode:"]),
+            ("evaluator.toml", ["default_model", "claudecode:"]),
+        ],
+    )
+    def test_copies_config_with_expected_content(
+        self, mock_workspace_env: Path, filename: str, expected_strings: list[str]
+    ) -> None:
+        """設定ファイルが期待する内容でコピーされること。"""
+        from quant_insight_plus.cli import _overlay_claudecode_configs
+
+        _overlay_claudecode_configs(mock_workspace_env)
+
+        cfg = mock_workspace_env / "configs" / filename
+        assert cfg.exists()
+        content = cfg.read_text()
+        for s in expected_strings:
+            assert s in content
 
     def test_creates_subdirectories(self, mock_workspace_env: Path) -> None:
         """サブディレクトリが自動作成されること。"""
@@ -102,18 +132,46 @@ class TestOverlayClaudecodeConfigs:
             _overlay_claudecode_configs(mock_workspace_env)
 
 
+class TestCreateDataDirs:
+    """_create_data_dirs のユニットテスト。"""
+
+    def test_creates_data_input_directories(self, mock_workspace_env: Path) -> None:
+        """data/inputs/ 配下に ohlcv, returns, master ディレクトリが作成されること。"""
+        from quant_insight_plus.cli import _create_data_dirs
+
+        created = _create_data_dirs(mock_workspace_env)
+
+        assert len(created) == 3
+        assert (mock_workspace_env / "data" / "inputs" / "ohlcv").is_dir()
+        assert (mock_workspace_env / "data" / "inputs" / "returns").is_dir()
+        assert (mock_workspace_env / "data" / "inputs" / "master").is_dir()
+
+    def test_idempotent(self, mock_workspace_env: Path) -> None:
+        """既にディレクトリが存在する場合もエラーにならないこと。"""
+        from quant_insight_plus.cli import _create_data_dirs
+
+        _create_data_dirs(mock_workspace_env)
+        created = _create_data_dirs(mock_workspace_env)
+
+        assert len(created) == 3
+
+
 class TestSetupCommand:
     """setup コマンドの統合テスト。"""
 
+    @patch("quant_insight_plus.cli._print_next_steps")
+    @patch("quant_insight_plus.cli._create_data_dirs")
     @patch("quant_insight_plus.cli._overlay_claudecode_configs")
     @patch("quant_insight_plus.cli.quant_setup")
-    def test_setup_calls_quant_setup_then_overlay(
+    def test_setup_calls_all_steps_in_order(
         self,
         mock_quant_setup: MagicMock,
         mock_overlay: MagicMock,
+        mock_data_dirs: MagicMock,
+        mock_next_steps: MagicMock,
         mock_workspace_env: Path,
     ) -> None:
-        """quant_setup → _overlay_claudecode_configs の順で呼ばれること。"""
+        """quant_setup → overlay → data_dirs → next_steps の順で呼ばれること。"""
         from typer.testing import CliRunner
 
         from quant_insight_plus.cli import app
@@ -127,16 +185,49 @@ class TestSetupCommand:
             call_order.append("overlay")
             return [Path("orchestrator.toml")]
 
+        def _track_data_dirs(ws: Path) -> list[Path]:
+            call_order.append("data_dirs")
+            return []
+
+        def _track_next_steps(ws: Path) -> None:
+            call_order.append("next_steps")
+
         mock_quant_setup.side_effect = _track_quant_setup
         mock_overlay.side_effect = _track_overlay
+        mock_data_dirs.side_effect = _track_data_dirs
+        mock_next_steps.side_effect = _track_next_steps
 
         runner = CliRunner()
         result = runner.invoke(app, ["setup", "--workspace", str(mock_workspace_env)])
 
         assert result.exit_code == 0, result.output
-        assert call_order == ["quant_setup", "overlay"]
-        mock_quant_setup.assert_called_once_with(workspace=mock_workspace_env)
-        mock_overlay.assert_called_once_with(mock_workspace_env)
+        assert call_order == ["quant_setup", "overlay", "data_dirs", "next_steps"]
+
+    @patch("quant_insight_plus.cli._print_next_steps")
+    @patch("quant_insight_plus.cli._create_data_dirs")
+    @patch("quant_insight_plus.cli._overlay_claudecode_configs")
+    @patch("quant_insight_plus.cli.quant_setup")
+    def test_setup_output_contains_data_dir_message(
+        self,
+        mock_quant_setup: MagicMock,
+        mock_overlay: MagicMock,
+        mock_data_dirs: MagicMock,
+        mock_next_steps: MagicMock,
+        mock_workspace_env: Path,
+    ) -> None:
+        """setup の出力にデータディレクトリ作成メッセージが含まれること。"""
+        from typer.testing import CliRunner
+
+        from quant_insight_plus.cli import app
+
+        mock_overlay.return_value = [Path("orchestrator.toml")]
+        mock_data_dirs.return_value = []
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["setup", "--workspace", str(mock_workspace_env)])
+
+        assert result.exit_code == 0, result.output
+        assert "データディレクトリを作成" in result.output
 
     def test_setup_help_shows_workspace_option(self) -> None:
         """setup --help に --workspace が表示されること。"""

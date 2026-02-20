@@ -25,8 +25,10 @@ Claude Code モデル（`claudecode:` プレフィックス）使用時は CLI �
 ## インストール
 
 ```bash
-pip install git+https://github.com/drillan/mixseek-quant-insight-plus
+uv tool install git+https://github.com/drillan/mixseek-quant-insight-plus
 ```
+
+> **Note**: `pip install git+https://github.com/drillan/mixseek-quant-insight-plus` でもインストール可能ですが、CLI ツールには隔離環境で管理できる `uv tool install` を推奨します。
 
 ### ローカル開発
 

@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-_EXAMPLES_PRESETS_PATH = (
-    Path(__file__).resolve().parent.parent / "examples" / "configs" / "presets" / "claudecode.toml"
+_TEMPLATES_PRESETS_PATH = (
+    Path(__file__).resolve().parent.parent / "src" / "quant_insight_plus" / "templates" / "presets" / "claudecode.toml"
 )
 
 # delegate_only でブロックすべきメタツール
@@ -54,8 +54,8 @@ _ALLOWED_TOOLS = [
 
 @pytest.fixture
 def presets() -> dict[str, object]:
-    """examples/configs/presets/claudecode.toml を読み込む。"""
-    with _EXAMPLES_PRESETS_PATH.open("rb") as f:
+    """templates/presets/claudecode.toml を読み込む。"""
+    with _TEMPLATES_PRESETS_PATH.open("rb") as f:
         return tomllib.load(f)
 
 
@@ -119,11 +119,11 @@ class TestDelegateOnlyPreset:
 
 
 class TestPresetConsistency:
-    """examples と workspaces のプリセットファイルの一貫性を検証。"""
+    """テンプレートプリセットファイルの一貫性を検証。"""
 
-    def test_examples_preset_file_exists(self) -> None:
-        """examples/configs/presets/claudecode.toml が存在すること。"""
-        assert _EXAMPLES_PRESETS_PATH.exists()
+    def test_templates_preset_file_exists(self) -> None:
+        """templates/presets/claudecode.toml が存在すること。"""
+        assert _TEMPLATES_PRESETS_PATH.exists()
 
     def test_all_preset_sections_have_permission_mode(self, presets: dict[str, object]) -> None:
         """全プリセットセクションが permission_mode を持つこと。"""

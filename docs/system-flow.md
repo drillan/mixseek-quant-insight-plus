@@ -42,9 +42,9 @@ flowchart TB
 
 `qip setup` コマンドを実行すると、以下が自動的に行われます:
 
-1. `mixseek init` でワークスペースの基本ディレクトリ構造を作成
-2. `configs/` 以下に TOML 設定ファイルのテンプレートを配置
-3. `qip db init` で DuckDB スキーマ（`agent_implementation` テーブル）を初期化
+1. ワークスペースの基本ディレクトリ構造を作成（`logs/`, `configs/`, `templates/`）
+2. `configs/` 以下にテンプレート設定ファイルを配置（ClaudeCode 専用設定）
+3. DuckDB スキーマ（`agent_implementation` テーブル）を初期化
 4. `data/inputs/` ディレクトリを作成
 
 ```

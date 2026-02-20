@@ -28,8 +28,9 @@ register_claudecode_quant_agents()
 from importlib.metadata import PackageNotFoundError, version  # noqa: E402
 
 from mixseek.cli.main import app as core_app  # noqa: E402
+from mixseek.models.workspace import WorkspaceStructure  # noqa: E402
 from quant_insight.cli.commands import data_app, db_app, export_app  # noqa: E402
-from quant_insight.cli.main import setup as quant_setup  # noqa: E402
+from quant_insight.storage import ImplementationStore  # noqa: E402
 from quant_insight.utils.env import get_workspace  # noqa: E402
 
 # quant-insight サブコマンドを core_app に統合
@@ -37,14 +38,34 @@ core_app.add_typer(data_app, name="data")
 core_app.add_typer(db_app, name="db")
 core_app.add_typer(export_app, name="export")
 
-# examples/configs/ ディレクトリのパス
-# editable install 前提（上流の quant-insight/_get_examples_dir と同じ方式）。
-# wheel インストール時は examples/ がパッケージに含まれないため動作しない。
-_PLUS_EXAMPLES_CONFIGS_DIR = Path(__file__).parent.parent.parent / "examples" / "configs"
+_TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 
-def _overlay_claudecode_configs(workspace: Path) -> list[Path]:
-    """claudecode 版エージェント設定をワークスペースに上書きコピー。
+def _init_workspace(workspace: Path) -> None:
+    """ワークスペースのディレクトリ構造を作成。
+
+    mixseek_init() を使わず、WorkspaceStructure で
+    必要なディレクトリのみ作成する（Gemini 設定ファイルは生成しない）。
+
+    Args:
+        workspace: ワークスペースパス
+    """
+    structure = WorkspaceStructure.create(workspace)
+
+    if structure.exists:
+        if not typer.confirm(
+            f"ワークスペースが既に存在します: {workspace}。上書きしますか？",
+            default=False,
+        ):
+            typer.echo("セットアップを中止しました。", err=True)
+            raise typer.Exit(code=1)
+
+    structure.create_directories()
+    typer.echo(f"ワークスペースを初期化しました: {workspace}")
+
+
+def _install_templates(workspace: Path) -> list[Path]:
+    """テンプレート設定をワークスペースにコピー。
 
     Args:
         workspace: ワークスペースパス
@@ -53,17 +74,17 @@ def _overlay_claudecode_configs(workspace: Path) -> list[Path]:
         コピーされたファイルの相対パスリスト
 
     Raises:
-        FileNotFoundError: examples/configs/ ディレクトリが見つからない場合
+        FileNotFoundError: templates ディレクトリが見つからない場合
     """
-    if not _PLUS_EXAMPLES_CONFIGS_DIR.is_dir():
-        msg = f"examples/configs ディレクトリが見つかりません: {_PLUS_EXAMPLES_CONFIGS_DIR}"
+    if not _TEMPLATES_DIR.is_dir():
+        msg = f"templates ディレクトリが見つかりません: {_TEMPLATES_DIR}"
         raise FileNotFoundError(msg)
 
     configs_dir = workspace / "configs"
     copied_files: list[Path] = []
 
-    for src_file in _PLUS_EXAMPLES_CONFIGS_DIR.rglob("*.toml"):
-        rel_path = src_file.relative_to(_PLUS_EXAMPLES_CONFIGS_DIR)
+    for src_file in _TEMPLATES_DIR.rglob("*.toml"):
+        rel_path = src_file.relative_to(_TEMPLATES_DIR)
         dest_file = configs_dir / rel_path
         dest_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src_file, dest_file)
@@ -124,15 +145,28 @@ def setup(
         help="ワークスペースパス（未指定時は$MIXSEEK_WORKSPACE）",
     ),
 ) -> None:
-    """環境を一括セットアップ（mixseek init → config init → db init → ClaudeCode 設定適用 → データディレクトリ作成）"""
-    quant_setup(workspace=workspace)
-
+    """環境を一括セットアップ（ワークスペース初期化 → テンプレートコピー → DB 初期化 → データディレクトリ作成）"""
     ws = workspace or get_workspace()
-    copied = _overlay_claudecode_configs(ws)
-    typer.echo(f"ClaudeCode エージェント設定を適用: {len(copied)} ファイルを上書き")
 
+    # Step 1: ワークスペース構造を作成
+    typer.echo("Step 1/4: ワークスペース構造を作成...")
+    _init_workspace(ws)
+
+    # Step 2: テンプレート設定をコピー
+    typer.echo("Step 2/4: テンプレート設定をコピー...")
+    copied = _install_templates(ws)
+    typer.echo(f"  {len(copied)} ファイルをコピーしました")
+
+    # Step 3: DB 初期化
+    typer.echo("Step 3/4: データベースを初期化...")
+    store = ImplementationStore(workspace=ws)
+    store.initialize_schema()
+    typer.echo(f"  {store.db_path}")
+
+    # Step 4: データディレクトリ作成
+    typer.echo("Step 4/4: データディレクトリを作成...")
     _create_data_dirs(ws)
-    typer.echo("データディレクトリを作成: data/inputs/{ohlcv,returns,master}")
+    typer.echo("  data/inputs/{ohlcv,returns,master}")
 
     _print_next_steps(ws)
 

@@ -93,6 +93,24 @@ def get_upstream_method_hash() -> str:
 
 **Returns**: `str` — 16進数のハッシュ文字列
 
+## Named Constants
+
+### SUBMISSION_FILENAME
+
+`str` — 提出ファイル名（`"submission.py"`）。
+
+### ANALYSIS_FILENAME
+
+`str` — 分析結果ファイル名（`"analysis.json"`）。
+
+### SUBMISSIONS_DIR_NAME
+
+`str` — 提出ディレクトリ名（`"submissions"`）。
+
+### EXPECTED_UPSTREAM_METHOD_HASH
+
+`str` — `RoundController._execute_single_round()` の既知の SHA-256 ハッシュ値。upstream 変更時にテストで検出するために使用。
+
 ## Exceptions
 
 ### SubmissionFileNotFoundError

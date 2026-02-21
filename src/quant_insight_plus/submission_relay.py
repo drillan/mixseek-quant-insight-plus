@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 SUBMISSION_FILENAME = "submission.py"
 ANALYSIS_FILENAME = "analysis.md"
 SUBMISSIONS_DIR_NAME = "submissions"
+EXPECTED_UPSTREAM_METHOD_HASH = "2a4f43ae89b3de20258933001ce370c249d8c48fa9a07d2840cf1c8422266bd7"
 
 
 class SubmissionFileNotFoundError(FileNotFoundError):

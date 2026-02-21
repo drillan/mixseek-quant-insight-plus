@@ -5,8 +5,9 @@ contracts/submission_relay.md に基づく:
 - ensure_round_dir: 冪等なディレクトリ作成
 - get_submission_content: submission.py の読み取り
 - patch_submission_relay / reset_submission_relay_patch: monkey-patch
+- get_upstream_method_hash: upstream メソッドの SHA-256 ハッシュ取得
 - SubmissionFileNotFoundError: 専用例外の定義
-- 名前付き定数: SUBMISSION_FILENAME, ANALYSIS_FILENAME, SUBMISSIONS_DIR_NAME
+- 名前付き定数: SUBMISSION_FILENAME, ANALYSIS_FILENAME, SUBMISSIONS_DIR_NAME, EXPECTED_UPSTREAM_METHOD_HASH
 """
 
 from pathlib import Path
@@ -15,6 +16,7 @@ import pytest
 
 from quant_insight_plus.submission_relay import (
     ANALYSIS_FILENAME,
+    EXPECTED_UPSTREAM_METHOD_HASH,
     SUBMISSION_FILENAME,
     SUBMISSIONS_DIR_NAME,
     SubmissionFileNotFoundError,
@@ -201,3 +203,33 @@ class TestGetUpstreamMethodHash:
     def test_deterministic(self) -> None:
         """同じ結果を返すこと（決定論的）。"""
         assert get_upstream_method_hash() == get_upstream_method_hash()
+
+
+class TestUpstreamDriftDetection:
+    """upstream パッチのドリフト検出テスト (SC-003)。
+
+    upstream の RoundController._execute_single_round() が更新された場合、
+    ハッシュ値が変化しテストが失敗する。これにより monkey-patch の見直しが
+    必要であることが自動的に通知される。
+
+    テスト失敗時の対応:
+        1. upstream の変更内容を確認する
+        2. patch_submission_relay() の互換性を検証する
+        3. 必要に応じてパッチを更新する
+        4. EXPECTED_UPSTREAM_METHOD_HASH を新しいハッシュ値に更新する
+    """
+
+    def test_upstream_method_unchanged(self) -> None:
+        """upstream メソッドが既知のハッシュと一致すること (SC-003)。
+
+        このテストが失敗した場合、upstream の _execute_single_round() が
+        変更されており、patch_submission_relay() の互換性確認が必要。
+        """
+        actual = get_upstream_method_hash()
+        assert actual == EXPECTED_UPSTREAM_METHOD_HASH, (
+            "upstream の RoundController._execute_single_round() が変更されています。\n"
+            f"  期待値: {EXPECTED_UPSTREAM_METHOD_HASH}\n"
+            f"  実際値: {actual}\n"
+            "patch_submission_relay() の互換性を確認し、"
+            "EXPECTED_UPSTREAM_METHOD_HASH を更新してください。"
+        )

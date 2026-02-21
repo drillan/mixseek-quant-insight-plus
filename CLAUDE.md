@@ -100,3 +100,10 @@ mixseek-core → mixseek-plus → mixseek-quant-insight → mixseek-quant-insigh
 | パッケージ管理 | uv |
 | 品質ツール | ruff, mypy, pytest |
 | ドキュメント | Sphinx + MyST-Parser + shibuya |
+
+## Active Technologies
+- Python 3.13+ + pydantic-ai, pydantic 2.10+, Typer (CLI) (001-fs-code-execution)
+- ファイルシステム（`submissions/round_{N}/`）。DuckDB は leader_board/round_status 用に維持 (001-fs-code-execution)
+
+## Recent Changes
+- 001-fs-code-execution: Added Python 3.13+ + pydantic-ai, pydantic 2.10+, Typer (CLI)

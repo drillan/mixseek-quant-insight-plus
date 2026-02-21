@@ -85,21 +85,23 @@ class TestLeaderSystemInstructionMCPToolNames:
         assert "禁止" in system_instruction, "system_instruction にコード直接生成の禁止が明示されていない"
 
 
-class TestLeaderPromptEvaluatorGuidance:
-    """Leader の system_instruction に Evaluator のコードブロック抽出に関するガイダンスがあることを検証。"""
+class TestLeaderPromptFSRelayGuidance:
+    """Leader の system_instruction が FS Relay（FR-011）に対応していることを検証。"""
 
-    def test_mentions_evaluator_code_block_extraction(
+    def test_mentions_evaluator_auto_delivery(
         self,
         system_instruction: str,
     ) -> None:
-        """Evaluator がコードブロックを抽出することへの言及があること。"""
+        """Evaluator にコードが自動的に渡されることへの言及があること。"""
         assert "Evaluator" in system_instruction, "system_instruction に Evaluator への言及がない"
-        assert "コードブロック" in system_instruction, "system_instruction にコードブロック抽出の説明がない"
+        assert "ファイルシステム" in system_instruction or "自動" in system_instruction, (
+            "system_instruction に FS 経由の自動提出の説明がない"
+        )
 
-    def test_mentions_verbatim_copy_instruction(
+    def test_output_is_summary_and_strategy_only(
         self,
         system_instruction: str,
     ) -> None:
-        """変更せずコードをコピーする指示があること。"""
-        has_verbatim = "変更せず" in system_instruction or "そのまま" in system_instruction
-        assert has_verbatim, "system_instruction に verbatim コピー指示（「変更せず」または「そのまま」）がない"
+        """最終出力が概要・戦略のみであることが明示されていること。"""
+        has_summary = "概要" in system_instruction or "戦略" in system_instruction
+        assert has_summary, "system_instruction に概要・戦略のみの出力指示がない"

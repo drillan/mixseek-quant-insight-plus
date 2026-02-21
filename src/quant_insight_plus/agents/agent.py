@@ -1,9 +1,12 @@
-"""ClaudeCode版 LocalCodeExecutorAgent。
+"""ClaudeCode版 LocalCodeExecutorAgent（FS ベース版）。
 
 ClaudeCode の組み込みツール（Bash, Read等）を活用し、
 pydantic-ai のカスタムツールセットは登録しない。
+ファイルシステムを介してコードを管理する。
 """
 
+import os
+from pathlib import Path
 from typing import Any
 
 from mixseek.agents.member.base import BaseMemberAgent
@@ -14,19 +17,22 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 from quant_insight.agents.local_code_executor.agent import LocalCodeExecutorAgent
 from quant_insight.agents.local_code_executor.models import ImplementationContext, LocalCodeExecutorConfig
-from quant_insight.agents.local_code_executor.output_models import SubmitterOutput
-from quant_insight.storage import get_implementation_store
+
+from quant_insight_plus.agents.output_models import FileAnalyzerOutput, FileSubmitterOutput
+from quant_insight_plus.submission_relay import ensure_round_dir, get_round_dir
 
 AGENT_TYPE_NAME = "claudecode_local_code_executor"
 
+_WORKSPACE_ENV_VAR = "MIXSEEK_WORKSPACE"
+
 
 class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[misc]
-    """ClaudeCode版 LocalCodeExecutorAgent。
+    """ClaudeCode版 LocalCodeExecutorAgent（FS ベース版）。
 
     LocalCodeExecutorAgent を継承し、以下をオーバーライド:
     - __init__: create_authenticated_model() でモデルを解決し、ツールセットなしで Agent を構築
-    - _enrich_task_with_existing_scripts(): スクリプト内容をプロンプトに埋め込む
-    - execute(): SubmitterOutput を Markdown 形式にフォーマットしてリーダーに返す
+    - _format_output_content(): FileSubmitterOutput/FileAnalyzerOutput をフォーマット
+    - execute(): FS ベースのフロー（_ensure_round_directory + _enrich_task_with_workspace_context）
     """
 
     def __init__(self, config: MemberAgentConfig) -> None:
@@ -36,7 +42,6 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
             config: Member Agent設定。
 
         Raises:
-            RuntimeError: DuckDBスキーマが初期化されていない場合。
             ValueError: 認証失敗またはTOML設定不足の場合。
         """
         # BaseMemberAgent.__init__ を直接呼び出し
@@ -45,7 +50,6 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
 
         # 親クラスのヘルパーメソッドを再利用
         self.executor_config = self._build_executor_config(config)
-        self._verify_database_schema()
         output_type = self._resolve_output_type()
         model_settings = self._create_model_settings()
 
@@ -62,11 +66,69 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
             retries=self.config.max_retries,
         )
 
+    def _get_workspace_path(self) -> Path:
+        """MIXSEEK_WORKSPACE 環境変数からパスを取得。
+
+        Returns:
+            ワークスペースの Path。
+
+        Raises:
+            RuntimeError: 環境変数未設定時。
+        """
+        workspace = os.environ.get(_WORKSPACE_ENV_VAR)
+        if workspace is None:
+            msg = f"{_WORKSPACE_ENV_VAR} 環境変数が設定されていません"
+            raise RuntimeError(msg)
+        return Path(workspace)
+
+    def _ensure_round_directory(self) -> None:
+        """ラウンドディレクトリを作成。ImplementationContext 未設定時は何もしない。"""
+        impl_ctx = self.executor_config.implementation_context
+        if impl_ctx is None:
+            return
+        workspace = self._get_workspace_path()
+        ensure_round_dir(workspace, impl_ctx.round_number)
+
+    def _enrich_task_with_workspace_context(self, task: str) -> str:
+        """ラウンドディレクトリ内のファイル内容をタスクプロンプトに埋め込む。
+
+        Args:
+            task: 元のタスク文字列。
+
+        Returns:
+            ファイル内容がフッタに埋め込まれたタスク文字列。
+
+        Raises:
+            RuntimeError: MIXSEEK_WORKSPACE 未設定時。
+        """
+        impl_ctx = self.executor_config.implementation_context
+        if impl_ctx is None:
+            return task
+
+        workspace = self._get_workspace_path()
+        round_dir = get_round_dir(workspace, impl_ctx.round_number)
+
+        if not round_dir.is_dir():
+            return task
+
+        sections: list[str] = []
+        for file_path in sorted(round_dir.iterdir()):
+            if file_path.is_file():
+                content = file_path.read_text()
+                if content.strip():
+                    sections.append(f"### {file_path.name}\n```\n{content}\n```")
+
+        if not sections:
+            return task
+
+        footer = "\n\n---\n## ワークスペースファイル\n\n" + "\n\n".join(sections)
+        return task + footer
+
     def _format_output_content(self, output: BaseModel | str) -> str:
         """構造化出力をリーダーエージェント向けにフォーマット。
 
-        SubmitterOutput は Evaluator がコードブロックを正規表現で抽出できるよう、
-        Markdown 形式（```python ブロック付き）にフォーマットする。
+        FileSubmitterOutput はファイルからコードを読み取り Markdown 形式にフォーマット。
+        FileAnalyzerOutput は report フィールドをそのまま返す。
         その他の構造化出力は JSON のまま返す。
 
         Args:
@@ -75,11 +137,11 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
         Returns:
             フォーマットされた出力文字列。
         """
-        if isinstance(output, SubmitterOutput):
-            return (
-                f"## Submissionの概要\n{output.description}\n\n"
-                f"## Submissionスクリプト\n```python\n{output.submission}\n```"
-            )
+        if isinstance(output, FileSubmitterOutput):
+            code = Path(output.submission_path).read_text()
+            return f"## Submissionの概要\n{output.description}\n\n## Submissionスクリプト\n```python\n{code}\n```"
+        if isinstance(output, FileAnalyzerOutput):
+            return output.report
         if isinstance(output, BaseModel):
             return output.model_dump_json(indent=2)
         return output
@@ -90,16 +152,18 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
         context: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> MemberAgentResult:
-        """エージェントタスクを実行（SubmitterOutput を Markdown 形式にフォーマット）。
+        """エージェントタスクを実行（FS ベース版）。
 
-        親クラスの execute() と同一のロジックだが、SubmitterOutput を
-        JSON ではなく Markdown 形式にフォーマットする。これにより、
-        リーダーが受け取る出力に ```python ブロックが含まれ、
-        Evaluator がコードを正しく抽出できる。
+        FS ベースのフロー:
+        1. ImplementationContext を設定
+        2. ラウンドディレクトリを作成
+        3. ワークスペースコンテキストでタスクをエンリッチ
+        4. エージェントを実行
+        5. 出力をフォーマットして返す
 
         NOTE: 親クラス LocalCodeExecutorAgent.execute()
-        (mixseek-quant-insight==0.1.0) のロジックを複製し、シリアライズ部分のみ変更。
-        依存ライブラリ更新時にドリフトする可能性があるため注意。
+        (mixseek-quant-insight==0.1.0) のロジックを基に、
+        DuckDB 依存を FS ベースに置き換え。
 
         Args:
             task: Leader Agentからのタスク説明。
@@ -120,12 +184,10 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
             )
 
         try:
-            enriched_task = await self._enrich_task_with_existing_scripts(task)
+            self._ensure_round_directory()
+            enriched_task = self._enrich_task_with_workspace_context(task)
             result = await self.agent.run(enriched_task, deps=self.executor_config)
             all_messages = result.all_messages()
-
-            if self.executor_config.implementation_context is not None:
-                await self._save_output_scripts(result.output)
 
             content = self._format_output_content(result.output)
 
@@ -145,57 +207,6 @@ class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent):  # type: ignore[
                 agent_type=str(AgentType.CUSTOM),
                 error_message=str(e),
             )
-
-    async def _enrich_task_with_existing_scripts(self, task: str) -> str:
-        """既存スクリプトの内容をタスクプロンプトに埋め込む。
-
-        親クラスはファイル名のみ追加するが、ClaudeCode 版は read_script ツールを
-        持たないため、スクリプト内容そのものをプロンプトに埋め込む。
-
-        DatabaseReadError は呼び出し元に伝播する。エンリッチメントは補助的機能だが、
-        DB エラー時にエンリッチなしで続行すると暗黙のデータ欠損となるため、
-        明示的にエラーを伝播させる（フォールバック禁止ポリシー）。
-
-        Args:
-            task: 元のタスク文字列。
-
-        Returns:
-            既存スクリプト内容が追加されたタスク文字列。
-
-        Raises:
-            DatabaseReadError: list_scripts / read_script の DB 読み込み失敗時。
-        """
-        impl_ctx = self.executor_config.implementation_context
-        if impl_ctx is None:
-            return task
-
-        store = get_implementation_store()
-        existing_scripts = await store.list_scripts(
-            execution_id=impl_ctx.execution_id,
-            team_id=impl_ctx.team_id,
-            round_number=impl_ctx.round_number,
-        )
-
-        if not existing_scripts:
-            return task
-
-        sections: list[str] = []
-        for script_info in existing_scripts:
-            file_name = script_info["file_name"]
-            code = await store.read_script(
-                execution_id=impl_ctx.execution_id,
-                team_id=impl_ctx.team_id,
-                round_number=impl_ctx.round_number,
-                file_name=file_name,
-            )
-            if code is not None:
-                sections.append(f"### {file_name}\n```python\n{code}\n```")
-
-        if not sections:
-            return task
-
-        footer = "\n\n---\n## 既存スクリプト\n\n" + "\n\n".join(sections)
-        return task + footer
 
 
 def register_claudecode_quant_agents() -> None:

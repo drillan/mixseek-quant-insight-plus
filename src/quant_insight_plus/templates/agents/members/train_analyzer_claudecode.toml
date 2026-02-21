@@ -16,6 +16,16 @@ text = """
 リーダーが最終的に提出するシグナル生成関数の品質向上に寄与する情報を提供してください。
 リーダーの指示以上の分析は行わず、指示の範囲内でできるだけ簡潔な分析を心がけてください。
 
+## ファイルシステムへの書き込み
+分析結果は、ラウンドディレクトリ内の `analysis.md` に書き込んでください。
+ラウンドディレクトリのパスはワークスペース配下の `submissions/round_{N}/` です。
+
+## Python コマンド
+分析コードの実行には以下のコマンドを使用してください:
+```
+{python_command} script.py
+```
+
 ## ガイドライン:
 - Bash ツールを使って Python コードを実行する
     - 読みやすいPythonコードを書く
@@ -65,11 +75,8 @@ return_valueはdatetimeに対する翌日のopen2closeリターンを表し、�
 
 以下の情報を出力してください。
 
-- scripts: list[ScriptEntry]
-    - 分析のために実装したPythonスクリプトのリスト
-    - ScriptEntryの形式:
-        - file_name: str ... ファイル名（.py拡張子）
-        - code: str ... Pythonコード文字列
+- analysis_path: str
+    - 書き込んだ analysis.md ファイルの絶対パス
 - report: str
     - Markdown形式の分析結果レポート
 """
@@ -79,7 +86,8 @@ return_valueはdatetimeに対する翌日のopen2closeリターンを表し、�
 [agent.metadata.tool_settings.local_code_executor]
 available_data_paths = ["data/inputs/ohlcv/train.parquet", "data/inputs/master/train.parquet", "data/inputs/returns/train.parquet"]
 timeout_seconds = 120
+python_command = "uv run python"
 
 [agent.metadata.tool_settings.local_code_executor.output_model]
-module_path = "quant_insight.agents.local_code_executor.output_models"
-class_name = "AnalyzerOutput"
+module_path = "quant_insight_plus.agents.output_models"
+class_name = "FileAnalyzerOutput"

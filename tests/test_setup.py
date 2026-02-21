@@ -1,6 +1,7 @@
-"""setup コマンドのテンプレートインストール機能テスト。
+"""setup コマンドのテスト。
 
-qip setup 実行時にワークスペース初期化とテンプレートコピーが
+qip setup 実行時にワークスペース初期化・テンプレートコピー・
+submissions ディレクトリ作成・データディレクトリ作成が
 正しく実行されることを検証する。
 """
 
@@ -8,6 +9,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from click.testing import Result
 
 
 class TestTemplatesDir:
@@ -161,19 +163,21 @@ class TestSetupCommand:
 
     @patch("quant_insight_plus.cli._print_next_steps")
     @patch("quant_insight_plus.cli._create_data_dirs")
-    @patch("quant_insight_plus.cli.ImplementationStore")
     @patch("quant_insight_plus.cli._install_templates")
     @patch("quant_insight_plus.cli._init_workspace")
     def test_setup_calls_all_steps_in_order(
         self,
         mock_init_workspace: MagicMock,
         mock_install_templates: MagicMock,
-        mock_store_cls: MagicMock,
         mock_data_dirs: MagicMock,
         mock_next_steps: MagicMock,
         mock_workspace_env: Path,
     ) -> None:
-        """init_workspace → install_templates → db_init → data_dirs → next_steps の順で呼ばれること。"""
+        """全ステップが正しい順序で呼ばれること。
+
+        init_workspace → install_templates → data_dirs → next_steps
+        (patch_submission_relay はモジュールレベルで実行済み)
+        """
         from typer.testing import CliRunner
 
         from quant_insight_plus.cli import app
@@ -187,9 +191,6 @@ class TestSetupCommand:
             call_order.append("install_templates")
             return [Path("orchestrator.toml")]
 
-        def _track_db_init() -> None:
-            call_order.append("db_init")
-
         def _track_data_dirs(ws: Path) -> list[Path]:
             call_order.append("data_dirs")
             return []
@@ -199,9 +200,6 @@ class TestSetupCommand:
 
         mock_init_workspace.side_effect = _track_init_workspace
         mock_install_templates.side_effect = _track_install_templates
-        mock_store = MagicMock()
-        mock_store.initialize_schema.side_effect = _track_db_init
-        mock_store_cls.return_value = mock_store
         mock_data_dirs.side_effect = _track_data_dirs
         mock_next_steps.side_effect = _track_next_steps
 
@@ -209,35 +207,47 @@ class TestSetupCommand:
         result = runner.invoke(app, ["setup", "--workspace", str(mock_workspace_env)])
 
         assert result.exit_code == 0, result.output
-        assert call_order == ["init_workspace", "install_templates", "db_init", "data_dirs", "next_steps"]
+        assert call_order == [
+            "init_workspace",
+            "install_templates",
+            "data_dirs",
+            "next_steps",
+        ]
 
-    @patch("quant_insight_plus.cli._print_next_steps")
-    @patch("quant_insight_plus.cli._create_data_dirs")
-    @patch("quant_insight_plus.cli.ImplementationStore")
-    @patch("quant_insight_plus.cli._install_templates")
-    @patch("quant_insight_plus.cli._init_workspace")
-    def test_setup_output_contains_data_dir_message(
+    @pytest.fixture
+    def setup_result(self, mock_workspace_env: Path) -> Result:
+        """setup コマンドを共通パッチ付きで実行し、結果を返す。"""
+        with (
+            patch("quant_insight_plus.cli._init_workspace"),
+            patch("quant_insight_plus.cli._install_templates", return_value=[Path("orchestrator.toml")]),
+            patch("quant_insight_plus.cli._create_data_dirs", return_value=[]),
+            patch("quant_insight_plus.cli._print_next_steps"),
+        ):
+            from typer.testing import CliRunner
+
+            from quant_insight_plus.cli import app
+
+            runner = CliRunner()
+            result = runner.invoke(app, ["setup", "--workspace", str(mock_workspace_env)])
+            assert result.exit_code == 0, result.output
+            return result
+
+    def test_setup_creates_submissions_directory(
         self,
-        mock_init_workspace: MagicMock,
-        mock_install_templates: MagicMock,
-        mock_store_cls: MagicMock,
-        mock_data_dirs: MagicMock,
-        mock_next_steps: MagicMock,
+        setup_result: Result,
         mock_workspace_env: Path,
     ) -> None:
-        """setup の出力にデータディレクトリ作成メッセージが含まれること。"""
-        from typer.testing import CliRunner
+        """setup 実行後に submissions/ ディレクトリが作成されること（SC-005）。"""
+        from quant_insight_plus.submission_relay import SUBMISSIONS_DIR_NAME
 
-        from quant_insight_plus.cli import app
+        assert (mock_workspace_env / SUBMISSIONS_DIR_NAME).is_dir()
 
-        mock_install_templates.return_value = [Path("orchestrator.toml")]
-        mock_data_dirs.return_value = []
-
-        runner = CliRunner()
-        result = runner.invoke(app, ["setup", "--workspace", str(mock_workspace_env)])
-
-        assert result.exit_code == 0, result.output
-        assert "データディレクトリを作成" in result.output
+    def test_setup_output_contains_submissions_message(
+        self,
+        setup_result: Result,
+    ) -> None:
+        """setup の出力に submissions ディレクトリ作成メッセージが含まれること。"""
+        assert "submissions" in setup_result.output.lower()
 
     def test_setup_help_shows_workspace_option(self) -> None:
         """setup --help に --workspace が表示されること。"""

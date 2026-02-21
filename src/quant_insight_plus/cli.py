@@ -19,18 +19,19 @@ from mixseek_plus.agents import register_claudecode_agents, register_groq_agents
 from mixseek_plus.core_patch import patch_core
 
 from quant_insight_plus.agents.agent import register_claudecode_quant_agents
+from quant_insight_plus.submission_relay import SUBMISSIONS_DIR_NAME, patch_submission_relay
 
 patch_core()
 register_groq_agents()
 register_claudecode_agents()
 register_claudecode_quant_agents()
+patch_submission_relay()
 
 from importlib.metadata import PackageNotFoundError, version  # noqa: E402
 
 from mixseek.cli.main import app as core_app  # noqa: E402
 from mixseek.models.workspace import WorkspaceStructure  # noqa: E402
 from quant_insight.cli.commands import data_app, db_app, export_app  # noqa: E402
-from quant_insight.storage import ImplementationStore  # noqa: E402
 from quant_insight.utils.env import get_workspace  # noqa: E402
 
 # quant-insight サブコマンドを core_app に統合
@@ -145,7 +146,11 @@ def setup(
         help="ワークスペースパス（未指定時は$MIXSEEK_WORKSPACE）",
     ),
 ) -> None:
-    """環境を一括セットアップ（ワークスペース初期化 → テンプレートコピー → DB 初期化 → データディレクトリ作成）"""
+    """環境を一括セットアップ。
+
+    ワークスペース初期化 → テンプレートコピー → submissions ディレクトリ作成 →
+    データディレクトリ作成。patch_submission_relay() はモジュールレベルで実行済み。
+    """
     ws = workspace or get_workspace()
 
     # Step 1: ワークスペース構造を作成
@@ -157,11 +162,11 @@ def setup(
     copied = _install_templates(ws)
     typer.echo(f"  {len(copied)} ファイルをコピーしました")
 
-    # Step 3: DB 初期化
-    typer.echo("Step 3/4: データベースを初期化...")
-    store = ImplementationStore(workspace=ws)
-    store.initialize_schema()
-    typer.echo(f"  {store.db_path}")
+    # Step 3: submissions/ ディレクトリ作成
+    typer.echo("Step 3/4: submissions ディレクトリを作成...")
+    submissions_dir = ws / SUBMISSIONS_DIR_NAME
+    submissions_dir.mkdir(parents=True, exist_ok=True)
+    typer.echo(f"  {submissions_dir}")
 
     # Step 4: データディレクトリ作成
     typer.echo("Step 4/4: データディレクトリを作成...")

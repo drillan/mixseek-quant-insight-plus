@@ -1,7 +1,9 @@
-"""ClaudeCodeLocalCodeExecutorAgent のユニットテスト。"""
+"""ClaudeCodeLocalCodeExecutorAgent のユニットテスト（FS ベース版）。"""
 
-from unittest.mock import MagicMock, patch
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from mixseek.models.member_agent import MemberAgentConfig
 
 from quant_insight_plus.agents.agent import ClaudeCodeLocalCodeExecutorAgent
@@ -21,8 +23,7 @@ class TestClaudeCodeLocalCodeExecutorAgentInit:
         """create_authenticated_model でモデルを解決すること。"""
         mock_create_model.return_value = mock_model
 
-        with patch.object(ClaudeCodeLocalCodeExecutorAgent, "_verify_database_schema"):
-            agent = ClaudeCodeLocalCodeExecutorAgent(member_agent_config)
+        agent = ClaudeCodeLocalCodeExecutorAgent(member_agent_config)
 
         mock_create_model.assert_called_once_with("claudecode:claude-opus-4-6")
         assert agent.agent.model is mock_model
@@ -49,6 +50,74 @@ class TestClaudeCodeLocalCodeExecutorAgentInit:
     ) -> None:
         """output_model 未設定時のデフォルト output_type は str であること。"""
         assert agent.agent.output_type is str
+
+
+class TestEnsureRoundDirectory:
+    """_ensure_round_directory のテスト。"""
+
+    @pytest.mark.anyio
+    async def test_creates_round_dir_when_context_set(
+        self,
+        agent: ClaudeCodeLocalCodeExecutorAgent,
+        mock_workspace_env: Path,
+    ) -> None:
+        """ImplementationContext 設定時にラウンドディレクトリを作成すること。"""
+        mock_result = MagicMock()
+        mock_result.output = "test output"
+        mock_result.all_messages.return_value = []
+        agent.agent.run = AsyncMock(return_value=mock_result)  # type: ignore[method-assign]
+
+        context = {
+            "execution_id": "exec-1",
+            "team_id": "team-1",
+            "round_number": 1,
+            "member_agent_name": "test-agent",
+        }
+        await agent.execute("タスク", context=context)
+
+        round_dir = mock_workspace_env / "submissions" / "round_1"
+        assert round_dir.is_dir()
+
+    @pytest.mark.anyio
+    async def test_skips_when_no_context(
+        self,
+        agent: ClaudeCodeLocalCodeExecutorAgent,
+        mock_workspace_env: Path,
+    ) -> None:
+        """ImplementationContext 未設定時はラウンドディレクトリを作成しないこと。"""
+        mock_result = MagicMock()
+        mock_result.output = "test output"
+        mock_result.all_messages.return_value = []
+        agent.agent.run = AsyncMock(return_value=mock_result)  # type: ignore[method-assign]
+
+        await agent.execute("タスク", context=None)
+
+        submissions_dir = mock_workspace_env / "submissions"
+        assert not submissions_dir.exists()
+
+
+class TestGetWorkspacePath:
+    """_get_workspace_path のテスト。"""
+
+    def test_returns_workspace_path(
+        self,
+        agent: ClaudeCodeLocalCodeExecutorAgent,
+        mock_workspace_env: Path,
+    ) -> None:
+        """MIXSEEK_WORKSPACE 環境変数からパスを返すこと。"""
+        result = agent._get_workspace_path()
+        assert result == mock_workspace_env
+
+    def test_raises_runtime_error_when_unset(
+        self,
+        agent: ClaudeCodeLocalCodeExecutorAgent,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """MIXSEEK_WORKSPACE 未設定時に RuntimeError を送出すること。"""
+        monkeypatch.delenv("MIXSEEK_WORKSPACE", raising=False)
+
+        with pytest.raises(RuntimeError, match="MIXSEEK_WORKSPACE"):
+            agent._get_workspace_path()
 
 
 class TestRegisterAgents:

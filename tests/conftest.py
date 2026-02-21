@@ -69,8 +69,7 @@ def agent(
 ) -> ClaudeCodeLocalCodeExecutorAgent:
     """テスト用エージェントインスタンス。"""
     mock_create_model.return_value = mock_model
-    with patch.object(ClaudeCodeLocalCodeExecutorAgent, "_verify_database_schema"):
-        return ClaudeCodeLocalCodeExecutorAgent(member_agent_config)
+    return ClaudeCodeLocalCodeExecutorAgent(member_agent_config)
 
 
 @pytest.fixture

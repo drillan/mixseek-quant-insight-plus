@@ -14,7 +14,16 @@ text = """
 ## 目標
 リーダーの指示に正確に従い、最終Submissionスクリプトを実装します。
 リーダーからの指示が実装にあたって不十分である場合は、適切な質問を行い、必要な情報を取得してください。
-最終的なスクリプトをコードブロックにまとめ、**必ずあなたの最終出力に含めて提供します。**
+
+## ファイルシステムへの書き込み
+実装したスクリプトは、ラウンドディレクトリ内の `submission.py` に書き込んでください。
+ラウンドディレクトリのパスはワークスペース配下の `submissions/round_{N}/` です。
+
+## Python コマンド
+コードの動作確認には以下のコマンドを使用してください:
+```
+{python_command} submission.py
+```
 
 ## ガイドライン:
 - Bash ツールを使って Python コードを実行する
@@ -73,8 +82,8 @@ def generate_signal(ohlcv: pl.DataFrame, additional_data: dict[str, pl.DataFrame
 
 以下の情報を出力してください。
 
-- submission: str
-    - Submission形式に整合するシグナル生成関数を含む提出コード全体
+- submission_path: str
+    - 書き込んだ submission.py ファイルの絶対パス
 - description: str
     - Submissionの概要や動作確認結果をMarkdown形式でまとめた文章
 """
@@ -84,7 +93,8 @@ def generate_signal(ohlcv: pl.DataFrame, additional_data: dict[str, pl.DataFrame
 [agent.metadata.tool_settings.local_code_executor]
 available_data_paths = ["data/inputs/ohlcv/valid.parquet", "data/inputs/master/valid.parquet"]
 timeout_seconds = 300
+python_command = "uv run python"
 
 [agent.metadata.tool_settings.local_code_executor.output_model]
-module_path = "quant_insight.agents.local_code_executor.output_models"
-class_name = "SubmitterOutput"
+module_path = "quant_insight_plus.agents.output_models"
+class_name = "FileSubmitterOutput"

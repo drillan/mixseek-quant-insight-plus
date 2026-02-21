@@ -25,6 +25,7 @@ patch_core()
 register_groq_agents()
 register_claudecode_agents()
 register_claudecode_quant_agents()
+patch_submission_relay()
 
 from importlib.metadata import PackageNotFoundError, version  # noqa: E402
 
@@ -147,7 +148,8 @@ def setup(
 ) -> None:
     """環境を一括セットアップ。
 
-    ワークスペース初期化 → テンプレートコピー → submissions ディレクトリ作成 → データディレクトリ作成。
+    ワークスペース初期化 → テンプレートコピー → submissions ディレクトリ作成 →
+    データディレクトリ作成。patch_submission_relay() はモジュールレベルで実行済み。
     """
     ws = workspace or get_workspace()
 
@@ -160,11 +162,10 @@ def setup(
     copied = _install_templates(ws)
     typer.echo(f"  {len(copied)} ファイルをコピーしました")
 
-    # Step 3: submissions/ ディレクトリ作成 + Relay パッチ登録
+    # Step 3: submissions/ ディレクトリ作成
     typer.echo("Step 3/4: submissions ディレクトリを作成...")
     submissions_dir = ws / SUBMISSIONS_DIR_NAME
     submissions_dir.mkdir(parents=True, exist_ok=True)
-    patch_submission_relay()
     typer.echo(f"  {submissions_dir}")
 
     # Step 4: データディレクトリ作成

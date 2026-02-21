@@ -152,31 +152,31 @@ flowchart TB
     Leader["Leader<br>（claudecode:claude-opus-4-6）<br>チーム全体を指揮"]
     Leader -->|"タスク指示"| TA["train-analyzer<br>train データの分析<br>仮説検証"]
     Leader -->|"タスク指示"| SC["submission-creator<br>Submission スクリプト実装<br>動作確認"]
-    TA -->|"AnalyzerOutput<br>scripts + report"| Leader
-    SC -->|"SubmitterOutput<br>submission + description"| Leader
+    TA -->|"FileAnalyzerOutput<br>analysis_path + report"| Leader
+    SC -->|"FileSubmitterOutput<br>submission_path + description"| Leader
 ```
 
 | エージェント | 入力データ | 出力 | タイムアウト |
 |------------|----------|------|------------|
-| **train-analyzer** | train の OHLCV, Master, Returns | `AnalyzerOutput`（スクリプト + レポート） | 120 秒 |
-| **submission-creator** | valid の OHLCV, Master | `SubmitterOutput`（Submission + 説明） | 300 秒 |
+| **train-analyzer** | train の OHLCV, Master, Returns | `FileAnalyzerOutput`（analysis_path + レポート） | 120 秒 |
+| **submission-creator** | valid の OHLCV, Master | `FileSubmitterOutput`（submission_path + 説明） | 300 秒 |
 
 Leader はメンバーの出力を受け取り、仮説の検証結果に基づいて次のラウンドの指示を組み立てます。
 
 ### 3.3 ラウンド制と反復改善
 
-オーケストレーター実行時、各チームは複数ラウンドにわたりシグナル生成を繰り返します。前ラウンドで作成されたファイルは自動的にプロンプトに埋め込まれ、反復改善を可能にします。
+オーケストレーター実行時、各チームは複数ラウンドにわたりシグナル生成を繰り返します。同一ラウンド内で先に実行されたエージェントが作成したファイルは、後続エージェントのプロンプトに自動埋め込みされます。
 
 ```{mermaid}
 flowchart LR
-    R1["Round 1<br>エージェント実行"] -->|"ファイル保存"| FS["submissions/<br>round_{N}/"]
-    FS -->|"ファイル内容埋め込み<br>プロンプトに自動追加"| R2["Round 2<br>エージェント実行"]
-    R2 -->|"ファイル更新"| FS
-    FS -->|"ファイル内容埋め込み"| R3["Round 3<br>エージェント実行"]
+    R1["Round 1<br>エージェント実行"] -->|"ファイル保存"| FS1["submissions/<br>round_1/"]
+    FS1 -->|"同一ラウンド内で<br>後続エージェントが参照"| R1
+    R2["Round 2<br>エージェント実行"] -->|"ファイル保存"| FS2["submissions/<br>round_2/"]
+    FS2 -->|"同一ラウンド内で<br>後続エージェントが参照"| R2
 ```
 
 - 各ラウンドで生成されたファイルは `submissions/round_{N}/` ディレクトリに保存されます
-- 次ラウンドの実行時、ラウンドディレクトリ内のファイルがプロンプトの末尾に Markdown 形式で自動追加されます
+- 同一ラウンド内で、先に実行されたエージェントの出力ファイルがプロンプトの末尾に Markdown 形式で自動追加されます
 - ファイル読み取りエラー時は例外を明示的に伝播します（暗黙のデータ欠損は許容しません）
 
 ワークスペースコンテキスト埋め込み機能の詳細は [User Guide](user-guide.md) の「ワークスペースコンテキスト埋め込み機能」セクションを参照してください。
@@ -231,6 +231,6 @@ flowchart TB
 
 - [Getting Started](getting-started.md) -- インストールと初期セットアップの手順
 - [データ仕様](data-specification.md) -- データスキーマ、リターン計算、分割、評価の詳細
-- [User Guide](user-guide.md) -- エージェント設定、チーム設定、スクリプト埋め込み機能
+- [User Guide](user-guide.md) -- エージェント設定、チーム設定、ワークスペースコンテキスト埋め込み機能
 - [実行設計ガイド](execution-guide.md) -- タスク設計、マルチチーム構成、プロンプトアーキテクチャ
 - [Configuration Reference](configuration-reference.md) -- 全設定ファイルのリファレンス

@@ -23,29 +23,23 @@ mixseek-quant-insight-plus で使用される主要な用語の定義です。
 `MemberAgentFactory`
 : mixseek-core が提供するエージェント登録メカニズム。TOML の `type` フィールドとエージェントクラスの対応を管理する。
 
-`スクリプト埋め込み`
-: `ClaudeCodeLocalCodeExecutorAgent` 固有の機能。過去のラウンドで DuckDB に保存されたスクリプトの内容を、次ラウンドのタスクプロンプト末尾に Markdown 形式で自動追加する。
+`ワークスペースコンテキスト埋め込み`
+: `ClaudeCodeLocalCodeExecutorAgent` 固有の機能。ラウンドディレクトリ（`submissions/round_{N}/`）内のファイル内容を、タスクプロンプト末尾に Markdown 形式で自動追加する。同一ラウンド内で先に実行されたエージェントの出力を後続エージェントが参照可能。
 
-`AnalyzerOutput`
-: データ分析エージェントの構造化出力モデル（Pydantic）。`scripts`（スクリプトリスト）と `report`（分析レポート）のフィールドを持つ。
+`FileAnalyzerOutput`
+: データ分析エージェントの構造化出力モデル（Pydantic）。`analysis_path`（分析結果ファイルの絶対パス）と `report`（Markdown 形式の分析レポート）のフィールドを持つ。
 
-`SubmitterOutput`
-: Submission 作成エージェントの構造化出力モデル（Pydantic）。`submission`（提出コード）と `description`（概要）のフィールドを持つ。
-
-`ScriptEntry`
-: スクリプトエントリモデル（Pydantic）。`file_name`（ファイル名）と `code`（Python コード）のフィールドを持つ。`AnalyzerOutput.scripts` の要素型。
+`FileSubmitterOutput`
+: Submission 作成エージェントの構造化出力モデル（Pydantic）。`submission_path`（提出コードファイルの絶対パス）と `description`（概要）のフィールドを持つ。
 
 `ImplementationContext`
-: DuckDB へのスクリプト保存時に使用するコンテキスト情報。`execution_id`（実行識別子）、`team_id`（チーム ID）、`round_number`（ラウンド番号）、`member_agent_name`（エージェント名）の4フィールドで構成される。
+: ラウンドディレクトリの特定に使用するコンテキスト情報。`execution_id`（実行識別子）、`team_id`（チーム ID）、`round_number`（ラウンド番号）、`member_agent_name`（エージェント名）の4フィールドで構成される。
 
-`agent_implementation` テーブル
-: DuckDB 上のテーブル。エージェントが生成したスクリプトを永続化する。`(execution_id, team_id, round_number, member_agent_name, file_name)` の複合一意制約を持つ。
+`submissions/round_{N}/` ディレクトリ
+: エージェントが生成したファイルを保存するラウンドごとのディレクトリ。`ensure_round_dir()` で冪等に作成される。`submission.py`（Submission コード）と `analysis.md`（分析レポート）を格納する。
 
-`DatabaseReadError`
-: DuckDB からの読み込み失敗時に送出される例外。`_enrich_task_with_existing_scripts()` メソッド内で発生し、呼び出し元に明示的に伝播される。
-
-`DatabaseWriteError`
-: DuckDB への書き込みが3回のリトライ（指数バックオフ）後も失敗した場合に送出される例外。
+`SubmissionFileNotFoundError`
+: Submission ファイルの読み取り失敗時に送出される例外。`patch_submission_relay()` 内で発生し、呼び出し元に明示的に伝播される。
 
 `qip`
 : `quant-insight-plus` CLI の短縮コマンド名。`qip member`、`qip team`、`qip exec` の3つのサブコマンドを提供する。起動時に `patch_core()` とエージェント登録を自動実行する。

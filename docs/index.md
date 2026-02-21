@@ -9,7 +9,7 @@ mixseek-quant-insight-plus は、mixseek-quant-insight の `LocalCodeExecutorAge
 主な機能:
 
 - **ClaudeCodeLocalCodeExecutorAgent**: pydantic-ai ツールセットを登録せず、Claude Code 組み込みツールに委ねるエージェント
-- **スクリプト内容のプロンプト埋め込み**: DuckDB に保存済みの既存スクリプトをプロンプトに直接埋め込み（MCP 不要）
+- **ワークスペースコンテキスト埋め込み**: ラウンドディレクトリ内の既存ファイルをプロンプトに直接埋め込み（MCP 不要）
 - **`claudecode_local_code_executor`** エージェントタイプの MemberAgentFactory 登録
 - **CLI エントリーポイント** (`quant-insight-plus` / `qip`): `patch_core()` とエージェント登録を自動実行
 

@@ -83,7 +83,7 @@ qip setup -w /path/to/workspace
 
 1. ワークスペース基本構造を作成（`logs/`, `configs/`, `templates/`）
 2. テンプレート設定ファイルを `configs/` にコピー（ClaudeCode 専用設定）
-3. DuckDB スキーマを初期化
+3. `submissions/` ディレクトリを作成
 4. `data/inputs/` ディレクトリを作成
 
 ### データの配置
@@ -194,7 +194,7 @@ CLI (`qip`) を使用する場合はこの操作は不要です。CLI が自動�
 
 ## 次のステップ
 
-- [User Guide](user-guide.md) - アーキテクチャ、設定詳細、スクリプト埋め込み機能
+- [User Guide](user-guide.md) - アーキテクチャ、設定詳細、ワークスペースコンテキスト埋め込み機能
 - [実行設計ガイド](execution-guide.md) - タスク設計、マルチチーム構成、プロンプトアーキテクチャ
 - [Configuration Reference](configuration-reference.md) - 全設定項目のリファレンス
 - [API Reference](api-reference.md) - クラスと関数の仕様

@@ -339,5 +339,5 @@ sharpe_ratio = mean(correlations) / std(correlations, ddof=1)
 
 - [システム全体フロー](system-flow.md) -- 全体的な処理フローの概要
 - [Configuration Reference](configuration-reference.md) -- `competition.toml` の全設定項目
-- [User Guide](user-guide.md) -- エージェント設定、スクリプト埋め込み機能
+- [User Guide](user-guide.md) -- エージェント設定、ワークスペースコンテキスト埋め込み機能
 - [Glossary](glossary.md) -- 用語定義

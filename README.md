@@ -11,7 +11,7 @@ Claude Code モデル（`claudecode:` プレフィックス）使用時は CLI �
 本パッケージは以下を提供します:
 
 - **ClaudeCodeLocalCodeExecutorAgent** - pydantic-ai ツールセットを登録せず、Claude Code 組み込みツールに委ねるエージェント
-- **スクリプト内容のプロンプト埋め込み** - DuckDB に保存済みの既存スクリプトをプロンプトに直接埋め込み（MCP 不要）
+- **ワークスペースコンテキスト埋め込み** - ラウンドディレクトリ内の既存ファイルをプロンプトに直接埋め込み（MCP 不要）
 - **`claudecode_local_code_executor`** エージェントタイプの MemberAgentFactory 登録
 - **CLI エントリーポイント** (`quant-insight-plus` / `qip`) - `patch_core()` とエージェント登録を自動実行
 
@@ -96,7 +96,7 @@ Python コードの記述は不要です。CLI が `patch_core()` と `register_
 | `qip member` | `agent.toml` | 単体 Agent テスト |
 | `qip team` | `team.toml` | 単一チーム開発・テスト |
 | `qip exec` | `orchestrator.toml` | 複数チーム本番実行 |
-| `qip setup` | - | 環境を一括セットアップ（ワークスペース初期化 → テンプレートコピー → DB 初期化 → データディレクトリ作成） |
+| `qip setup` | - | 環境を一括セットアップ（ワークスペース初期化 → テンプレートコピー → `submissions/` ディレクトリ作成 → データディレクトリ作成） |
 | `qip data` | - | データ取得・加工・分割 |
 | `qip db` | - | データベース管理 |
 | `qip export` | - | ログエクスポート |
@@ -126,7 +126,7 @@ mixseek-core (フレームワーク)
 |------|----------------------|--------------------------------|
 | モデル解決 | `Agent(model=config.model)` (文字列直接) | `create_authenticated_model()` (`claudecode:` 対応) |
 | ツールセット | pydantic-ai カスタムツール 4 種 | 登録なし (Claude Code 組み込みツール) |
-| 既存スクリプト参照 | ファイル名のみフッタに追加 | スクリプト内容を Markdown 形式で埋め込み |
+| 既存ファイル参照 | ファイル名のみフッタに追加 | ラウンドディレクトリ内のファイル内容を Markdown 形式で埋め込み |
 | `execute()` | 自前実装 | 親クラスから継承 |
 
 ## 開発

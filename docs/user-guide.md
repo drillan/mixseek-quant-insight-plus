@@ -21,7 +21,7 @@ mixseek-core (フレームワーク)
 |------|----------------------|--------------------------------|
 | モデル解決 | `Agent(model=config.model)` (文字列直接) | `create_authenticated_model()` (`claudecode:` 対応) |
 | ツールセット | pydantic-ai カスタムツール 4 種 | 登録なし (Claude Code 組み込みツール) |
-| 既存スクリプト参照 | ファイル名のみフッタに追加 | スクリプト内容を Markdown 形式で埋め込み |
+| 既存ファイル参照 | ファイル名のみフッタに追加 | ラウンドディレクトリ内のファイル内容を Markdown 形式で埋め込み |
 | `execute()` | 自前実装 | 親クラスから継承 |
 
 ## エージェント設定
@@ -68,19 +68,21 @@ timeout_seconds = 120
 
 ```toml
 [agent.metadata.tool_settings.local_code_executor.output_model]
-module_path = "quant_insight.agents.local_code_executor.output_models"
-class_name = "AnalyzerOutput"
+module_path = "quant_insight_plus.agents.output_models"
+class_name = "FileAnalyzerOutput"
 ```
 
 **利用可能な出力モデル:**
 
 | class_name | 用途 | フィールド |
 |------------|------|----------|
-| `AnalyzerOutput` | データ分析 | `scripts: list[ScriptEntry]`, `report: str` |
-| `SubmitterOutput` | Submission 作成 | `submission: str`, `description: str` |
+| `FileAnalyzerOutput` | データ分析 | `analysis_path: str`, `report: str` |
+| `FileSubmitterOutput` | Submission 作成 | `submission_path: str`, `description: str` |
 
-- **AnalyzerOutput**: train データの分析を行うエージェントに使用。分析で作成した Python スクリプトと Markdown レポートを出力
-- **SubmitterOutput**: Submission スクリプトを実装するエージェントに使用。提出コードとその説明を出力
+- **FileAnalyzerOutput**: train データの分析を行うエージェントに使用。分析結果ファイルの絶対パスと Markdown レポートを出力
+- **FileSubmitterOutput**: Submission スクリプトを実装するエージェントに使用。提出コードファイルの絶対パスとその説明を出力
+
+コード本体はファイルに存在し、構造化出力はファイルパスのみを含みます（コードの二重管理を排除）。
 
 ### system_instruction の書き方
 
@@ -113,7 +115,7 @@ text = """
 - リターン(目的変数)
 
 ## 最終出力
-- scripts: list[ScriptEntry] ... 分析で作成したスクリプト
+- analysis_path: str ... 分析結果ファイルの絶対パス
 - report: str ... Markdown形式の分析結果レポート
 """
 ```
@@ -124,7 +126,7 @@ text = """
 - 利用可能なツール（Bash, Read）を明示
 - データカラムの詳細をリファレンスとして含める
 - 出力形式を `output_model` のフィールドと一致させる
-- 「既存スクリプトはフッタに埋め込まれる」旨を記載（スクリプト埋め込み機能との連携）
+- 「既存ファイルはフッタに埋め込まれる」旨を記載（ワークスペースコンテキスト埋め込み機能との連携）
 
 ## チーム設定
 
@@ -195,26 +197,27 @@ config = "configs/agents/teams/claudecode_team.toml"
 
 複数チームの構成パターンは [実行設計ガイド](execution-guide.md) の「マルチチーム構成パターン」を参照してください。
 
-## スクリプト埋め込み機能
+## ワークスペースコンテキスト埋め込み機能
 
-`ClaudeCodeLocalCodeExecutorAgent` は、過去のラウンドで作成されたスクリプトをプロンプトに自動埋め込みします。
+`ClaudeCodeLocalCodeExecutorAgent` は、ラウンドディレクトリ内の既存ファイルをプロンプトに自動埋め込みします。
 
 ### データフロー
 
 ```
 Round N:
-  Agent 実行 → output.scripts を DuckDB (agent_implementation テーブル) に保存
+  Agent 実行 → submissions/round_{N}/ にファイルを Write
+    - submission-creator → submission.py
+    - train-analyzer → analysis.md
 
 Round N+1:
-  _enrich_task_with_existing_scripts()
-    → DuckDB から既存スクリプト一覧を取得 (list_scripts)
-    → 各スクリプトの内容を取得 (read_script)
+  _enrich_task_with_workspace_context()
+    → submissions/round_{N+1}/ 内の全ファイルを読み取り
     → タスクプロンプトの末尾に Markdown 形式で追加
 ```
 
 ### ImplementationContext
 
-スクリプトの保存・読み込みは `ImplementationContext` で識別されます。
+ファイルの保存・読み込みは `ImplementationContext` で識別されます。
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
@@ -223,7 +226,7 @@ Round N+1:
 | `round_number` | `int` | ラウンド番号 |
 | `member_agent_name` | `str` | メンバーエージェント名 |
 
-同一の `(execution_id, team_id, round_number)` に対して保存されたスクリプトが、次ラウンドのエンリッチメント対象となります。
+`round_number` に対応するラウンドディレクトリ（`submissions/round_{N}/`）内のファイルが、エンリッチメント対象となります。
 
 ### 埋め込み例
 
@@ -231,17 +234,16 @@ Round N+1:
 
 ````markdown
 ---
-## 既存スクリプト
+## ワークスペースファイル
 
-### analyze_train.py
-```python
-import pandas as pd
-df = pd.read_parquet("data/inputs/ohlcv/train.parquet")
-print(df.describe())
+### analysis.md
+```
+# 分析結果レポート
+...
 ```
 
-### create_signal.py
-```python
+### submission.py
+```
 import pandas as pd
 # シグナル生成ロジック
 ...
@@ -250,49 +252,44 @@ import pandas as pd
 
 ### エラー処理
 
-DB 読み込みエラー（`DatabaseReadError`）は呼び出し元に明示的に伝播します。エンリッチメント失敗時にエンリッチなしで処理を続行する（暗黙のデータ欠損）ことはありません。
+- `ImplementationContext` が未設定の場合、タスクをそのまま返します（エンリッチなし）
+- ラウンドディレクトリが存在しない場合、タスクをそのまま返します（エラーにはなりません）
+- `MIXSEEK_WORKSPACE` 環境変数が未設定の場合、`RuntimeError` が送出されます
 
-## DuckDB テーブル構造
+## ファイルシステムディレクトリ構造
 
-エージェントが生成したスクリプトは `agent_implementation` テーブルに永続化されます。
+エージェントが生成したファイルは `submissions/round_{N}/` ディレクトリに保存されます。
 
-### テーブル定義
+### ディレクトリ構造
 
-```sql
-CREATE TABLE IF NOT EXISTS agent_implementation (
-    id INTEGER PRIMARY KEY DEFAULT nextval('agent_implementation_id_seq'),
-
-    -- 識別子
-    execution_id TEXT NOT NULL,
-    team_id TEXT NOT NULL,
-    round_number INTEGER NOT NULL,
-    member_agent_name TEXT NOT NULL,
-    file_name TEXT NOT NULL,
-
-    -- コンテンツ
-    code TEXT NOT NULL,
-
-    -- メタデータ
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    -- 一意性制約
-    UNIQUE(execution_id, team_id, round_number, member_agent_name, file_name)
-)
+```
+$MIXSEEK_WORKSPACE/
+├── submissions/                    ← qip setup で作成
+│   ├── round_1/
+│   │   ├── submission.py           ← submission-creator が Write
+│   │   └── analysis.md             ← train-analyzer が Write
+│   ├── round_2/
+│   │   ├── submission.py
+│   │   └── analysis.md
+│   └── round_{N}/
+│       ├── submission.py
+│       └── analysis.md
+└── mixseek.db                      ← DuckDB（leader_board, round_status 用）
 ```
 
-### インデックス
+### ファイルの役割
 
-```sql
-CREATE INDEX IF NOT EXISTS idx_agent_implementation_context
-ON agent_implementation (execution_id, team_id, round_number, member_agent_name)
-```
+| ファイル | 生成元 | 説明 |
+|---------|-------|------|
+| `submission.py` | submission-creator | Submission 形式のシグナル生成コード |
+| `analysis.md` | train-analyzer | Markdown 形式の分析結果レポート |
 
-### 書き込み動作
+### ディレクトリ管理
 
-- UPSERT 方式: 同一の `(execution_id, team_id, round_number, member_agent_name, file_name)` が存在する場合は `code` を更新
-- スレッドローカルコネクション: 各エージェントが独立したコネクションを使用（MVCC 並列書き込み）
-- 非同期実行: `asyncio.to_thread` でスレッドプールに退避
-- リトライ: 書き込み失敗時は指数バックオフで3回リトライ（1秒 → 2秒 → 4秒）
+- **セットアップ時**: `qip setup` で `submissions/` ディレクトリを作成
+- **ラウンド実行時**: `ensure_round_dir()` で `submissions/round_{N}/` を冪等に作成
+- **ファイル書き込み**: エージェントが Claude Code の Write ツールで直接書き込み
+- **Evaluator への受け渡し**: `patch_submission_relay()` がファイルから直接読み取り、Leader の出力テキストの代わりに原本コードを Evaluator に渡す
 
 ## CLI の使用
 
@@ -356,7 +353,7 @@ qip setup -w /path/to/workspace
 
 1. ワークスペース基本構造を作成（`logs/`, `configs/`, `templates/`）
 2. テンプレート設定ファイルを `configs/` にコピー（ClaudeCode 専用設定）
-3. DuckDB スキーマを初期化
+3. `submissions/` ディレクトリを作成
 4. `data/inputs/` ディレクトリを作成
 
 ### データの配置

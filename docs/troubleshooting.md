@@ -29,54 +29,35 @@ claude
 
 初回起動時または再認証時に、ブラウザで認証フローが開始されます。
 
-## DuckDB
+## ファイルシステム
 
-### RuntimeError: DuckDB スキーマが初期化されていない
+### SubmissionFileNotFoundError
 
-`ClaudeCodeLocalCodeExecutorAgent` の初期化時に `_verify_database_schema()` が DuckDB の `agent_implementation` テーブルを検出できない場合に発生します。
-
-```bash
-# DuckDB スキーマを初期化
-export MIXSEEK_WORKSPACE=/path/to/workspace
-qip db init
-```
-
-ワークスペースの `mixseek.db` に `agent_implementation` テーブルが作成されます。
-
-### DatabaseReadError
-
-DuckDB からのスクリプト読み込みに失敗した場合に発生します。`_enrich_task_with_existing_scripts()` メソッド内で `list_scripts()` または `read_script()` が失敗したときに送出されます。
+ラウンドディレクトリに `submission.py` が存在しない場合、またはファイルが空の場合に発生します。`get_submission_content()` 内で送出されます。
 
 **考えられる原因:**
 
-- DB ファイル（`mixseek.db`）が破損している
-- ディスク容量不足
-- 他のプロセスが DB ファイルをロックしている
+- submission-creator がコードを生成したが、ファイルへの書き込みに失敗した
+- ラウンドディレクトリは存在するが `submission.py` が書き込まれていない
+- `submission.py` が存在するが空
 
 **対処法:**
 
 ```bash
-# DB ファイルの存在確認
-ls -la $MIXSEEK_WORKSPACE/mixseek.db
+# ラウンドディレクトリの内容を確認
+ls -la $MIXSEEK_WORKSPACE/submissions/round_{N}/
 
-# ディスク容量の確認
-df -h $MIXSEEK_WORKSPACE
-
-# DB を再初期化（既存データは失われます）
-qip db init
+# submission.py の内容を確認
+cat $MIXSEEK_WORKSPACE/submissions/round_{N}/submission.py
 ```
 
-> **重要**: `DatabaseReadError` は明示的に伝播されます。スクリプト埋め込みが失敗した場合、エンリッチなしで処理を続行することはありません。
+### RuntimeError: MIXSEEK_WORKSPACE 未設定
 
-### DatabaseWriteError
+`_get_workspace_path()` で `MIXSEEK_WORKSPACE` 環境変数が設定されていない場合に発生します。
 
-スクリプトの DuckDB への書き込みが3回のリトライ後も失敗した場合に発生します。
-
-**考えられる原因:**
-
-- ディスク容量不足
-- DB ファイルの書き込み権限なし
-- 一時的なファイルシステムエラー
+```bash
+export MIXSEEK_WORKSPACE=/path/to/workspace
+```
 
 ## 設定ファイル
 
@@ -119,16 +100,16 @@ register_claudecode_quant_agents()
 
 ```python
 # モジュールパスとクラス名が正しいか確認
-from quant_insight.agents.local_code_executor.output_models import AnalyzerOutput
-print(AnalyzerOutput.model_json_schema())
+from quant_insight_plus.agents.output_models import FileAnalyzerOutput
+print(FileAnalyzerOutput.model_json_schema())
 ```
 
 **利用可能な出力モデル:**
 
 | class_name | module_path | 用途 |
 |------------|-------------|------|
-| `AnalyzerOutput` | `quant_insight.agents.local_code_executor.output_models` | データ分析 |
-| `SubmitterOutput` | `quant_insight.agents.local_code_executor.output_models` | Submission 作成 |
+| `FileAnalyzerOutput` | `quant_insight_plus.agents.output_models` | データ分析 |
+| `FileSubmitterOutput` | `quant_insight_plus.agents.output_models` | Submission 作成 |
 
 ## Leader の動作異常
 

@@ -42,7 +42,7 @@
 ### Implementation (Green)
 
 - [ ] T005 [P] Implement src/quant_insight_plus/agents/output_models.py — FileSubmitterOutput, FileAnalyzerOutput with field_validator for absolute path validation
-- [ ] T006 Implement src/quant_insight_plus/submission_relay.py — get_round_dir, ensure_round_dir, SubmissionFileNotFoundError, SUBMISSION_FILENAME/ANALYSIS_FILENAME/SUBMISSIONS_DIR_NAME constants
+- [ ] T006 [P] Implement src/quant_insight_plus/submission_relay.py — get_round_dir, ensure_round_dir, SubmissionFileNotFoundError, SUBMISSION_FILENAME/ANALYSIS_FILENAME/SUBMISSIONS_DIR_NAME constants
 - [ ] T007 Run quality check: `uv run ruff check --fix . && uv run ruff format . && uv run mypy .`
 
 **Checkpoint**: 基盤モジュール完成。T003, T004 のテストが Green であること。
@@ -119,10 +119,15 @@
 
 **Independent Test**: ドリフト検出テストを実行し、upstream 変更時にテスト失敗を確認
 
-### Implementation + Tests
+### Tests (Red)
 
-- [ ] T023 [US4] Implement get_upstream_method_hash in src/quant_insight_plus/submission_relay.py — SHA-256 ハッシュ計算
-- [ ] T024 [US4] Write drift detection test in tests/test_submission_relay.py — 既知ハッシュ定数との照合、upstream 更新時にテスト失敗
+> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+
+- [ ] T023 [US4] Write drift detection test in tests/test_submission_relay.py — get_upstream_method_hash 呼び出し、既知ハッシュ定数との照合、upstream 更新時にテスト失敗 (Red)
+
+### Implementation (Green)
+
+- [ ] T024 [US4] Implement get_upstream_method_hash in src/quant_insight_plus/submission_relay.py — SHA-256 ハッシュ計算 (Green)
 - [ ] T025 [US4] Run quality check: `uv run ruff check --fix . && uv run ruff format . && uv run mypy .`
 
 **Checkpoint**: US4 完了。upstream 変更時にテストが自動的に失敗する仕組みが機能。
@@ -148,7 +153,7 @@
 - **Foundational (Phase 2)**: Phase 1 完了後 — **全 US をブロック**
 - **US1 (Phase 3)**: Phase 2 完了後 — コア機能（MVP）
 - **US2 (Phase 4)**: Phase 3 完了後 — agent.py 実装 (T012) に依存
-- **US3 (Phase 5)**: Phase 2 完了後 — submission_relay に依存。US1 と並行可能
+- **US3 (Phase 5)**: US1 の T011 完了後 — patch_submission_relay() に依存
 - **US4 (Phase 6)**: Phase 2 完了後 — submission_relay に依存。US1 と並行可能
 - **Polish (Phase 7)**: 全 US 完了後
 
@@ -156,7 +161,7 @@
 
 - **US1 (P1)**: Phase 2 完了後に開始可能。他 US への依存なし 🎯 MVP
 - **US2 (P2)**: US1 完了後（agent.py の _enrich_task_with_workspace_context 実装に依存）
-- **US3 (P3)**: Phase 2 完了後に開始可能。US1 と独立してテスト可能
+- **US3 (P3)**: US1 の T011 完了後に開始可能（patch_submission_relay に依存）
 - **US4 (P3)**: Phase 2 完了後に開始可能。US1 と独立してテスト可能
 
 ### Within Each User Story
@@ -171,23 +176,7 @@
 - **Phase 2**: T003 + T004（別テストファイル）、T005 + T006（別ソースファイル）
 - **Phase 3 Tests**: T008 + T009 + T010（全て別ファイル）
 - **Phase 3 TOML**: T013 + T014 + T015（全て別ファイル）
-- **US3 + US4**: Phase 2 完了後に並行開始可能
-
----
-
-## Parallel Example: Phase 3 (US1)
-
-```bash
-# テストを並行起動（全て別ファイル）:
-Task: "T008 - submission_relay 追加テスト in tests/test_submission_relay.py"
-Task: "T009 - execute output format テスト in tests/test_execute_output_format.py"
-Task: "T010 - agent テスト in tests/test_agent.py"
-
-# TOML を並行更新（全て別ファイル）:
-Task: "T013 - submission_creator_claudecode.toml"
-Task: "T014 - train_analyzer_claudecode.toml"
-Task: "T015 - claudecode_team.toml"
-```
+- **US4**: Phase 2 完了後に US1 と並行可能
 
 ---
 
@@ -213,9 +202,8 @@ Task: "T015 - claudecode_team.toml"
 ### Parallel Team Strategy
 
 Phase 2 完了後:
-- Developer A: US1（最優先、MVP）
-- Developer B: US3 + US4（US1 と並行可能）
-- US2 は US1 完了後に着手
+- Developer A: US1（最優先、MVP）→ US2（US1 完了後）→ US3（T011 完了後）
+- Developer B: US4（Phase 2 完了後に US1 と並行可能）
 
 ---
 

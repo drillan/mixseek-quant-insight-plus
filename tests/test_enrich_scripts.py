@@ -11,7 +11,9 @@ from quant_insight.agents.local_code_executor.models import ImplementationContex
 from quant_insight.storage import DatabaseReadError
 
 from quant_insight_plus.agents.agent import ClaudeCodeLocalCodeExecutorAgent
-from tests.conftest import ENRICH_STORE_PATCH
+
+# TODO: Remove after agent.py FS migration (see #39)
+_ENRICH_STORE_PATCH = "quant_insight_plus.agents.agent.get_implementation_store"
 
 
 class TestEnrichTaskWithExistingScripts:
@@ -28,7 +30,7 @@ class TestEnrichTaskWithExistingScripts:
 
         assert result == "分析してください"
 
-    @patch(ENRICH_STORE_PATCH)
+    @patch(_ENRICH_STORE_PATCH)
     async def test_no_scripts_returns_task_unchanged(
         self,
         mock_get_store: MagicMock,
@@ -45,7 +47,7 @@ class TestEnrichTaskWithExistingScripts:
 
         assert result == "分析してください"
 
-    @patch(ENRICH_STORE_PATCH)
+    @patch(_ENRICH_STORE_PATCH)
     async def test_embeds_script_content(
         self,
         mock_get_store: MagicMock,
@@ -65,7 +67,7 @@ class TestEnrichTaskWithExistingScripts:
         assert "import pandas as pd" in result
         assert "df = pd.read_csv('data.csv')" in result
 
-    @patch(ENRICH_STORE_PATCH)
+    @patch(_ENRICH_STORE_PATCH)
     async def test_embeds_multiple_scripts(
         self,
         mock_get_store: MagicMock,
@@ -104,7 +106,7 @@ class TestEnrichTaskWithExistingScripts:
         assert "model.py" in result
         assert "# model" in result
 
-    @patch(ENRICH_STORE_PATCH)
+    @patch(_ENRICH_STORE_PATCH)
     async def test_preserves_original_task(
         self,
         mock_get_store: MagicMock,
@@ -131,7 +133,7 @@ class TestEnrichTaskDatabaseReadError:
     例外を呼び出し元に伝播させる。
     """
 
-    @patch(ENRICH_STORE_PATCH)
+    @patch(_ENRICH_STORE_PATCH)
     async def test_list_scripts_database_error_propagates(
         self,
         mock_get_store: MagicMock,
@@ -149,7 +151,7 @@ class TestEnrichTaskDatabaseReadError:
         with pytest.raises(DatabaseReadError, match="connection lost"):
             await agent._enrich_task_with_existing_scripts("分析してください")
 
-    @patch(ENRICH_STORE_PATCH)
+    @patch(_ENRICH_STORE_PATCH)
     async def test_read_script_database_error_propagates(
         self,
         mock_get_store: MagicMock,
@@ -170,7 +172,7 @@ class TestEnrichTaskDatabaseReadError:
         with pytest.raises(DatabaseReadError, match="disk I/O error"):
             await agent._enrich_task_with_existing_scripts("分析してください")
 
-    @patch(ENRICH_STORE_PATCH)
+    @patch(_ENRICH_STORE_PATCH)
     async def test_read_script_error_mid_loop_propagates(
         self,
         mock_get_store: MagicMock,

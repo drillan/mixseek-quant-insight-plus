@@ -7,7 +7,7 @@ mixseek-quant-insight-plus の処理は、**セットアップ → データ準�
 ```{mermaid}
 flowchart TB
     subgraph Phase1["1. セットアップ"]
-        A["qip setup"] --> B["ワークスペース初期化<br>設定ファイル配置<br>DuckDB スキーマ作成"]
+        A["qip setup"] --> B["ワークスペース初期化<br>設定ファイル配置<br>submissions/ ディレクトリ作成"]
     end
 
     subgraph Phase2["2. データ準備"]
@@ -44,7 +44,7 @@ flowchart TB
 
 1. ワークスペースの基本ディレクトリ構造を作成（`logs/`, `configs/`, `templates/`）
 2. `configs/` 以下にテンプレート設定ファイルを配置（ClaudeCode 専用設定）
-3. DuckDB スキーマ（`agent_implementation` テーブル）を初期化
+3. `submissions/` ディレクトリを作成
 4. `data/inputs/` ディレクトリを作成
 
 ```
@@ -59,9 +59,13 @@ $MIXSEEK_WORKSPACE/
 │       │   └── submission_creator_claudecode.toml
 │       └── teams/
 │           └── claudecode_team.toml
+├── submissions/        ← エージェント生成コード（ラウンドごと）
+│   └── round_{N}/
+│       ├── submission.py
+│       └── analysis.md
 ├── data/
-│   ├── inputs/         ← データ配置先
-│   └── db/             ← DuckDB ファイル
+│   └── inputs/         ← データ配置先
+├── mixseek.db          ← DuckDB（leader_board, round_status 用）
 └── logs/
 ```
 
@@ -161,21 +165,21 @@ Leader はメンバーの出力を受け取り、仮説の検証結果に基づ�
 
 ### 3.3 ラウンド制と反復改善
 
-オーケストレーター実行時、各チームは複数ラウンドにわたりシグナル生成を繰り返します。前ラウンドで作成されたスクリプトは自動的にプロンプトに埋め込まれ、反復改善を可能にします。
+オーケストレーター実行時、各チームは複数ラウンドにわたりシグナル生成を繰り返します。前ラウンドで作成されたファイルは自動的にプロンプトに埋め込まれ、反復改善を可能にします。
 
 ```{mermaid}
 flowchart LR
-    R1["Round 1<br>エージェント実行"] -->|"スクリプト保存"| DB[(DuckDB<br>agent_implementation)]
-    DB -->|"スクリプト埋め込み<br>プロンプトに自動追加"| R2["Round 2<br>エージェント実行"]
-    R2 -->|"スクリプト更新"| DB
-    DB -->|"スクリプト埋め込み"| R3["Round 3<br>エージェント実行"]
+    R1["Round 1<br>エージェント実行"] -->|"ファイル保存"| FS["submissions/<br>round_{N}/"]
+    FS -->|"ファイル内容埋め込み<br>プロンプトに自動追加"| R2["Round 2<br>エージェント実行"]
+    R2 -->|"ファイル更新"| FS
+    FS -->|"ファイル内容埋め込み"| R3["Round 3<br>エージェント実行"]
 ```
 
-- 各ラウンドで生成されたスクリプトは DuckDB の `agent_implementation` テーブルに保存されます
-- 次ラウンドの実行時、保存済みスクリプトがプロンプトの末尾に Markdown 形式で自動追加されます
-- DB 読み込みエラー時は例外を明示的に伝播します（暗黙のデータ欠損は許容しません）
+- 各ラウンドで生成されたファイルは `submissions/round_{N}/` ディレクトリに保存されます
+- 次ラウンドの実行時、ラウンドディレクトリ内のファイルがプロンプトの末尾に Markdown 形式で自動追加されます
+- ファイル読み取りエラー時は例外を明示的に伝播します（暗黙のデータ欠損は許容しません）
 
-スクリプト埋め込み機能の詳細は [User Guide](user-guide.md) の「スクリプト埋め込み機能」セクションを参照してください。
+ワークスペースコンテキスト埋め込み機能の詳細は [User Guide](user-guide.md) の「ワークスペースコンテキスト埋め込み機能」セクションを参照してください。
 
 ### 3.4 オーケストレーター（qip exec）
 

@@ -210,36 +210,36 @@ config = "configs/agents/teams/team_composite.toml"
 flowchart TB
     subgraph Shared["共有リソース"]
         EV["evaluator.toml<br>（評価基準）"]
-        DB[(DuckDB)]
+        FS["submissions/<br>（ファイルシステム）"]
         TD["テストデータ"]
     end
 
     subgraph TeamA["Team A（独立）"]
         RC1["RoundController"]
         RH1["round_history"]
-        S1["scripts"]
+        S1["round_{N}/ ファイル"]
     end
 
     subgraph TeamB["Team B（独立）"]
         RC2["RoundController"]
         RH2["round_history"]
-        S2["scripts"]
+        S2["round_{N}/ ファイル"]
     end
 
     EV --> RC1
     EV --> RC2
-    RC1 --> DB
-    RC2 --> DB
+    RC1 --> FS
+    RC2 --> FS
 ```
 
 | 区分 | リソース | 説明 |
 |------|---------|------|
 | **独立** | `RoundController` | 各チームごとに独立したインスタンス |
 | **独立** | `round_history` | ラウンド履歴はチーム固有 |
-| **独立** | スクリプト保存 | DuckDB の `agent_implementation` テーブルに `team_id` で区別して保存 |
+| **独立** | スクリプト保存 | `submissions/round_{N}/` ディレクトリにファイルとして保存 |
 | **共有** | `evaluator.toml` | 全チーム同一の評価基準で比較 |
 | **共有** | テストデータ | 全チーム同一のテストデータで評価 |
-| **共有** | DuckDB | 物理的には共有だが、データは `team_id` で論理的に分離 |
+| **共有** | DuckDB | leader_board, round_status 用に使用 |
 
 ### チーム間の差別化軸
 

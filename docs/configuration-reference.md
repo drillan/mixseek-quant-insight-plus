@@ -32,6 +32,7 @@ mixseek-quant-insight-plus で使用する全設定ファイルのリファレ�
 | `available_data_paths` | `list[str]` | いいえ | `[]` | 利用可能なデータファイルパス（`$MIXSEEK_WORKSPACE` からの相対パス） |
 | `timeout_seconds` | `int` | いいえ | `120` | コード実行のタイムアウト秒数（0より大きい値） |
 | `max_output_chars` | `int \| null` | いいえ | `null` | 最大出力文字数（`null` = 無制限） |
+| `python_command` | `str` | はい | — | Python 実行コマンド（例: `"uv run python"`）。システム指示の `{python_command}` プレースホルダーに注入される |
 
 ### `[agent.metadata.tool_settings.local_code_executor.output_model]` セクション
 
@@ -46,29 +47,22 @@ mixseek-quant-insight-plus で使用する全設定ファイルのリファレ�
 
 | クラス名 | モジュールパス | 用途 |
 |---------|-------------|------|
-| `AnalyzerOutput` | `quant_insight.agents.local_code_executor.output_models` | データ分析エージェント |
-| `SubmitterOutput` | `quant_insight.agents.local_code_executor.output_models` | Submission 作成エージェント |
+| `FileAnalyzerOutput` | `quant_insight_plus.agents.output_models` | データ分析エージェント |
+| `FileSubmitterOutput` | `quant_insight_plus.agents.output_models` | Submission 作成エージェント |
 
-#### AnalyzerOutput のフィールド
+#### FileAnalyzerOutput のフィールド
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
-| `scripts` | `list[ScriptEntry]` | 分析で作成したスクリプトのリスト |
+| `analysis_path` | `str` | 書き込んだ `analysis.md` の絶対パス |
 | `report` | `str` | Markdown 形式の分析結果レポート |
 
-#### SubmitterOutput のフィールド
+#### FileSubmitterOutput のフィールド
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
-| `submission` | `str` | Submission 形式に整合するシグナル生成関数を含む提出コード全体 |
+| `submission_path` | `str` | 書き込んだ `submission.py` の絶対パス |
 | `description` | `str` | Submission の概要や動作確認結果（Markdown 形式） |
-
-#### ScriptEntry のフィールド
-
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
-| `file_name` | `str` | ファイル名（`.py` 拡張子） |
-| `code` | `str` | Python コード文字列 |
 
 ### 設定例
 
@@ -95,10 +89,11 @@ available_data_paths = [
     "data/inputs/returns/train.parquet",
 ]
 timeout_seconds = 120
+python_command = "uv run python"
 
 [agent.metadata.tool_settings.local_code_executor.output_model]
-module_path = "quant_insight.agents.local_code_executor.output_models"
-class_name = "AnalyzerOutput"
+module_path = "quant_insight_plus.agents.output_models"
+class_name = "FileAnalyzerOutput"
 ```
 
 **Submission 作成エージェント（submission_creator）:**
@@ -122,10 +117,11 @@ available_data_paths = [
     "data/inputs/master/valid.parquet",
 ]
 timeout_seconds = 300
+python_command = "uv run python"
 
 [agent.metadata.tool_settings.local_code_executor.output_model]
-module_path = "quant_insight.agents.local_code_executor.output_models"
-class_name = "SubmitterOutput"
+module_path = "quant_insight_plus.agents.output_models"
+class_name = "FileSubmitterOutput"
 ```
 
 ## ClaudeCode プリセット設定（claudecode.toml）
@@ -399,6 +395,10 @@ $MIXSEEK_WORKSPACE/
 │       │   └── submission_creator_claudecode.toml
 │       └── teams/
 │           └── claudecode_team.toml
+├── submissions/                   # エージェント生成コード（setup で作成）
+│   └── round_{N}/                 # ラウンドごとに自動作成
+│       ├── submission.py          # submission-creator が Write
+│       └── analysis.md            # train-analyzer が Write
 ├── data/
 │   └── inputs/
 │       ├── ohlcv/
@@ -413,5 +413,5 @@ $MIXSEEK_WORKSPACE/
 │           ├── master.parquet
 │           ├── train.parquet
 │           └── valid.parquet
-└── mixseek.db                     # DuckDB（自動作成）
+└── mixseek.db                     # DuckDB（leader_board, round_status 用）
 ```

@@ -23,7 +23,7 @@ type = "claudecode_local_code_executor"
 class ClaudeCodeLocalCodeExecutorAgent(LocalCodeExecutorAgent)
 ```
 
-ClaudeCode 版 LocalCodeExecutorAgent。Claude Code の組み込みツール（Bash, Read 等）を活用し、pydantic-ai のカスタムツールセットは登録しません。
+ClaudeCode 版 LocalCodeExecutorAgent（FS ベース版）。Claude Code の組み込みツール（Bash, Read 等）を活用し、pydantic-ai のカスタムツールセットは登録しません。
 
 ### コンストラクタ
 
@@ -41,18 +41,16 @@ def __init__(self, config: MemberAgentConfig) -> None
 
 | 例外 | 条件 |
 |------|------|
-| `RuntimeError` | DuckDB スキーマが初期化されていない場合 |
 | `ValueError` | 認証失敗または TOML 設定不足の場合 |
 
 **初期化の流れ**
 
 1. `BaseMemberAgent.__init__()` を呼び出し（`LocalCodeExecutorAgent.__init__` はスキップ）
 2. `_build_executor_config()` で `LocalCodeExecutorConfig` を構築
-3. `_verify_database_schema()` で DuckDB スキーマを検証
-4. `_resolve_output_type()` で出力型を決定
-5. `_create_model_settings()` でモデル設定を作成
-6. `create_authenticated_model()` で `claudecode:` プレフィックスを解決
-7. ツールセットなしの `pydantic_ai.Agent` を作成
+3. `_resolve_output_type()` で出力型を決定
+4. `_create_model_settings()` でモデル設定を作成
+5. `create_authenticated_model()` で `claudecode:` プレフィックスを解決
+6. ツールセットなしの `pydantic_ai.Agent` を作成
 
 **使用例**
 
@@ -71,15 +69,15 @@ config = MemberAgentConfig(
 agent = ClaudeCodeLocalCodeExecutorAgent(config)
 ```
 
-### _enrich_task_with_existing_scripts
+### _enrich_task_with_workspace_context
 
 ```python
-async def _enrich_task_with_existing_scripts(self, task: str) -> str
+def _enrich_task_with_workspace_context(self, task: str) -> str
 ```
 
-既存スクリプトの内容をタスクプロンプトに埋め込みます。
+ラウンドディレクトリ内のファイル内容をタスクプロンプトに埋め込みます。
 
-親クラスはファイル名のみ追加しますが、ClaudeCode 版は `read_script` ツールを持たないため、スクリプト内容そのものをプロンプトに埋め込みます。
+親クラスはファイル名のみ追加しますが、ClaudeCode 版は `read_script` ツールを持たないため、ラウンドディレクトリ内の全ファイル内容をプロンプトに埋め込みます。
 
 **引数**
 
@@ -89,19 +87,81 @@ async def _enrich_task_with_existing_scripts(self, task: str) -> str
 
 **戻り値**
 
-- `str`: 既存スクリプト内容が追加されたタスク文字列
+- `str`: ワークスペースファイル内容が追加されたタスク文字列
 
 **例外**
 
 | 例外 | 条件 |
 |------|------|
-| `DatabaseReadError` | `list_scripts` / `read_script` の DB 読み込み失敗時 |
+| `RuntimeError` | `MIXSEEK_WORKSPACE` 環境変数が未設定の場合 |
 
 **動作**
 
 - `implementation_context` が `None` の場合、タスクをそのまま返す
-- 既存スクリプトがない場合、タスクをそのまま返す
-- DB エラー時は明示的に例外を伝播する（エンリッチなしでの続行はしない）
+- ラウンドディレクトリが存在しない場合、タスクをそのまま返す
+- ラウンドディレクトリ内の全ファイルを読み取り、Markdown 形式でタスク末尾に追加する
+
+### _get_workspace_path
+
+```python
+def _get_workspace_path(self) -> Path
+```
+
+`MIXSEEK_WORKSPACE` 環境変数からワークスペースパスを取得します。
+
+**戻り値**
+
+- `Path`: ワークスペースのパス
+
+**例外**
+
+| 例外 | 条件 |
+|------|------|
+| `RuntimeError` | `MIXSEEK_WORKSPACE` 環境変数が未設定の場合 |
+
+### _ensure_round_directory
+
+```python
+def _ensure_round_directory(self) -> None
+```
+
+ラウンドディレクトリを作成します。`ImplementationContext` が未設定の場合は何もしません。
+
+### _format_output_content
+
+```python
+def _format_output_content(self, output: BaseModel | str) -> str
+```
+
+構造化出力をリーダーエージェント向けにフォーマットします。
+
+| 出力型 | フォーマット | 処理内容 |
+|-------|----------|--------|
+| `FileSubmitterOutput` | Markdown | ファイルからコードを読み取り、markdown 形式で返す |
+| `FileAnalyzerOutput` | プレーンテキスト | `output.report` をそのまま返す |
+| その他 `BaseModel` | JSON | `model_dump_json(indent=2)` で返す |
+| `str` | 文字列 | そのまま返す |
+
+### execute
+
+```python
+async def execute(
+    self,
+    task: str,
+    context: dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> MemberAgentResult
+```
+
+エージェントタスクを実行します（FS ベース版）。
+
+**処理の流れ**
+
+1. `context` が指定されていれば `ImplementationContext` を設定
+2. `_ensure_round_directory()` でラウンドディレクトリを作成
+3. `_enrich_task_with_workspace_context()` でタスクをエンリッチ
+4. `pydantic_ai.Agent.run()` でエージェントを実行
+5. 結果を `MemberAgentResult` として返す
 
 ## register_claudecode_quant_agents
 
@@ -128,46 +188,151 @@ register_claudecode_quant_agents()
 
 ## 構造化出力モデル
 
-エージェントの構造化出力として使用される Pydantic モデルです。`quant_insight.agents.local_code_executor.output_models` モジュールで定義されています。
+エージェントの構造化出力として使用される Pydantic モデルです。`quant_insight_plus.agents.output_models` モジュールで定義されています。
 
-### ScriptEntry
+### FileSubmitterOutput
 
 ```python
-class ScriptEntry(BaseModel)
+class FileSubmitterOutput(BaseModel)
 ```
 
-保存するスクリプトのエントリ。
+submission-creator の構造化出力。コード本体はファイルに存在し、構造化出力はファイルパスのみを含みます（コードの二重管理を排除）。TOML で `class_name = "FileSubmitterOutput"` として使用します。
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
-| `file_name` | `str` | ファイル名（`.py` 拡張子） |
-| `code` | `str` | Python コード文字列 |
+| `submission_path` | `str` | 書き込んだ `submission.py` の絶対パス |
+| `description` | `str` | Submission の概要（Markdown 形式） |
 
-### AnalyzerOutput
+**バリデーション**: `submission_path` は絶対パスであることが検証されます。相対パスや空文字列はバリデーションエラーになります。
+
+### FileAnalyzerOutput
 
 ```python
-class AnalyzerOutput(BaseModel)
+class FileAnalyzerOutput(BaseModel)
 ```
 
-分析エージェントの構造化出力。TOML で `class_name = "AnalyzerOutput"` として使用します。
+train-analyzer の構造化出力。分析レポートはファイルとモデルの両方に存在します（`report` はリーダーへの主要な報告内容として使用）。TOML で `class_name = "FileAnalyzerOutput"` として使用します。
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
-| `scripts` | `list[ScriptEntry]` | 分析で作成したスクリプトのリスト |
-| `report` | `str` | Markdown 形式の分析結果レポート |
+| `analysis_path` | `str` | 書き込んだ `analysis.md` の絶対パス |
+| `report` | `str` | 分析結果レポート（Markdown 形式） |
 
-### SubmitterOutput
+**バリデーション**: `analysis_path` は絶対パスであることが検証されます。相対パスや空文字列はバリデーションエラーになります。
+
+## submission_relay モジュール
+
+`quant_insight_plus.submission_relay` モジュールは、エージェントが生成したコードをファイルシステム経由で Evaluator に直接受け渡すための機能を提供します。
+
+### 定数
+
+| 定数 | 値 | 説明 |
+|------|-----|------|
+| `SUBMISSION_FILENAME` | `"submission.py"` | Submission ファイル名 |
+| `ANALYSIS_FILENAME` | `"analysis.md"` | 分析レポートファイル名 |
+| `SUBMISSIONS_DIR_NAME` | `"submissions"` | submissions ディレクトリ名 |
+
+### get_round_dir
 
 ```python
-class SubmitterOutput(BaseModel)
+def get_round_dir(workspace: Path, round_number: int) -> Path
 ```
 
-Submission 作成エージェントの構造化出力。TOML で `class_name = "SubmitterOutput"` として使用します。
+ラウンドディレクトリのパスを返します（ディレクトリの作成は行いません）。
 
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
-| `submission` | `str` | Submission 形式に整合するシグナル生成関数を含む提出コード全体 |
-| `description` | `str` | Submission の概要や動作確認結果（Markdown 形式） |
+**引数**
+
+| 名前 | 型 | 説明 |
+|------|-----|------|
+| `workspace` | `Path` | ワークスペースのパス |
+| `round_number` | `int` | ラウンド番号 |
+
+**戻り値**
+
+- `Path`: `{workspace}/submissions/round_{round_number}`
+
+### ensure_round_dir
+
+```python
+def ensure_round_dir(workspace: Path, round_number: int) -> Path
+```
+
+ラウンドディレクトリを作成して返します（冪等）。
+
+**引数**
+
+| 名前 | 型 | 説明 |
+|------|-----|------|
+| `workspace` | `Path` | ワークスペースのパス |
+| `round_number` | `int` | ラウンド番号 |
+
+**戻り値**
+
+- `Path`: 作成（または既存）のラウンドディレクトリパス
+
+**例外**
+
+| 例外 | 条件 |
+|------|------|
+| `OSError` | ディレクトリ作成失敗時 |
+
+### get_submission_content
+
+```python
+def get_submission_content(round_dir: Path) -> str
+```
+
+`submission.py` を読み取り、Python コードブロック形式で返します。
+
+**引数**
+
+| 名前 | 型 | 説明 |
+|------|-----|------|
+| `round_dir` | `Path` | ラウンドディレクトリのパス |
+
+**戻り値**
+
+- `str`: `` ```python\n{code}\n``` `` 形式の文字列
+
+**例外**
+
+| 例外 | 条件 |
+|------|------|
+| `SubmissionFileNotFoundError` | ファイルが存在しない場合、またはファイルが空の場合 |
+
+### patch_submission_relay
+
+```python
+def patch_submission_relay() -> None
+```
+
+`RoundController._execute_single_round()` を monkey-patch し、ファイルシステム経由でのコード受け渡しを有効にします。
+
+**動作**
+
+- Leader エージェント実行後、`submission.py` をファイルから直接読み取り、Evaluator に渡す
+- Leader の出力テキストの代わりに原本コードを使用する
+- 冪等（複数回呼び出し時は何もしない）
+
+### reset_submission_relay_patch
+
+```python
+def reset_submission_relay_patch() -> None
+```
+
+パッチをリセットし、元のメソッドに戻します（テスト用）。
+
+### get_upstream_method_hash
+
+```python
+def get_upstream_method_hash() -> str
+```
+
+パッチ対象メソッドの現在のソースコード SHA-256 ハッシュを返します。upstream の変更を自動検出するために使用します。
+
+**戻り値**
+
+- `str`: 16進数のハッシュ文字列（64 文字）
 
 ## 依存モデル
 
@@ -187,7 +352,7 @@ class LocalCodeExecutorConfig(BaseModel)
 | `timeout_seconds` | `int` | `120` | 実行タイムアウト秒数（0より大きい値） |
 | `max_output_chars` | `int \| None` | `None` | 最大出力文字数（`None` = 無制限） |
 | `output_model` | `OutputModelConfig \| None` | `None` | 構造化出力モデル設定 |
-| `implementation_context` | `ImplementationContext \| None` | `None` | 実装コンテキスト（DuckDB 保存時に使用） |
+| `implementation_context` | `ImplementationContext \| None` | `None` | 実装コンテキスト（ラウンドディレクトリ識別に使用） |
 
 ### OutputModelConfig
 
@@ -199,8 +364,8 @@ class OutputModelConfig(BaseModel)
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
-| `module_path` | `str` | モジュールパス（例: `quant_insight.agents.local_code_executor.output_models`） |
-| `class_name` | `str` | クラス名（例: `AnalyzerOutput`） |
+| `module_path` | `str` | モジュールパス（例: `quant_insight_plus.agents.output_models`） |
+| `class_name` | `str` | クラス名（例: `FileSubmitterOutput`） |
 
 ### ImplementationContext
 
@@ -208,7 +373,7 @@ class OutputModelConfig(BaseModel)
 class ImplementationContext(BaseModel)
 ```
 
-エージェント実装を特定するためのコンテキスト情報。DuckDB へのスクリプト保存時に使用する識別情報です。
+エージェント実装を特定するためのコンテキスト情報。ラウンドディレクトリの識別に使用します。
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
@@ -219,47 +384,29 @@ class ImplementationContext(BaseModel)
 
 ## 例外
 
-### DatabaseReadError
+### SubmissionFileNotFoundError
 
 ```python
-class DatabaseReadError(Exception)
+class SubmissionFileNotFoundError(FileNotFoundError)
 ```
 
-DuckDB からの読み込み失敗時に送出される例外です。`_enrich_task_with_existing_scripts()` メソッド内で `list_scripts()` または `read_script()` が失敗したときに発生します。
+`submission.py` がラウンドディレクトリに存在しない場合、またはファイルが空の場合に送出される例外です。`get_submission_content()` 内で発生します。
 
-**発生元**: `quant_insight.storage.implementation_store`
+**発生元**: `quant_insight_plus.submission_relay`
 
 **発生条件**:
 
-- DB ファイルが破損している
-- ディスク容量不足
-- 他のプロセスによる DB ファイルロック
+- ラウンドディレクトリに `submission.py` が存在しない
+- `submission.py` が存在するがファイルが空
 
-### DatabaseWriteError
+### RuntimeError (MIXSEEK_WORKSPACE 未設定)
 
-```python
-class DatabaseWriteError(Exception)
-```
-
-DuckDB への書き込みが3回のリトライ（指数バックオフ: 1秒 → 2秒 → 4秒）後も失敗した場合に送出される例外です。
-
-**発生元**: `quant_insight.storage.implementation_store`
-
-**発生条件**:
-
-- ディスク容量不足
-- DB ファイルの書き込み権限なし
-- ファイルシステムエラー
-
-### RuntimeError (スキーマ未初期化)
-
-`ClaudeCodeLocalCodeExecutorAgent.__init__()` の `_verify_database_schema()` で DuckDB の `agent_implementation` テーブルが検出できない場合に発生します。
+`ClaudeCodeLocalCodeExecutorAgent._get_workspace_path()` で `MIXSEEK_WORKSPACE` 環境変数が設定されていない場合に発生します。
 
 **対処法**:
 
 ```bash
 export MIXSEEK_WORKSPACE=/path/to/workspace
-qip db init
 ```
 
 ### ValueError (認証/設定)
@@ -312,7 +459,8 @@ quant-insight-plus version 0.1.0
 | 2 | `register_groq_agents()` | mixseek-plus | Groq エージェント登録 |
 | 3 | `register_claudecode_agents()` | mixseek-plus | ClaudeCode エージェント登録 |
 | 4 | `register_claudecode_quant_agents()` | quant-insight-plus | 本パッケージのエージェント登録 |
-| 5 | `add_typer()` / `command()` | quant-insight | quant-insight サブコマンド（setup, data, db, export）統合 |
+| 5 | `patch_submission_relay()` | quant-insight-plus | Submission リレーの monkey-patch 適用 |
+| 6 | `add_typer()` / `command()` | quant-insight | quant-insight サブコマンド（setup, data, db, export）統合 |
 
 ### CLI コマンド仕様
 

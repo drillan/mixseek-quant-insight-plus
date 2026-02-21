@@ -303,8 +303,8 @@ def create_draft(content):  # 型注釈なし
 **補足: SpecKitディレクトリ命名**
 
 SpecKitで生成されるディレクトリ（`specs/`配下）は、以下の形式に従う:
-- 形式: `<issue-number>-<name>`
-- issue番号: 3桁ゼロパディング（001、002、003...）
+- 形式: `<連番>-<name>`
+- 連番: 3桁ゼロパディング（001、002、003...）。GitHub Issue 番号ではなく、specs 内の通し番号
 - 例: `001-issue-workflow`, `002-auth`, `003-article-management`
 
 注: Gitブランチはゼロパディングなし（`.claude/git-conventions.md` 参照）

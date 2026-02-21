@@ -27,6 +27,14 @@ register_claudecode_agents()
 register_claudecode_quant_agents()
 patch_submission_relay()
 
+# claudecode-model の構造化出力時デフォルト max_turns を引き上げ。
+# オリジナル値 3 では ClaudeCode セッションが StructuredOutput ツール呼び出しを
+# 完了できず error_max_turns → リトライループが発生する。
+import claudecode_model.model as _claudecode_model_module  # noqa: E402
+
+_STRUCTURED_OUTPUT_MAX_TURNS = 10
+_claudecode_model_module.DEFAULT_MAX_TURNS_WITH_JSON_SCHEMA = _STRUCTURED_OUTPUT_MAX_TURNS  # type: ignore[attr-defined]
+
 from importlib.metadata import PackageNotFoundError, version  # noqa: E402
 
 from mixseek.cli.main import app as core_app  # noqa: E402

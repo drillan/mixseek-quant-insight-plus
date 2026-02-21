@@ -3,6 +3,7 @@
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-02-21
 **Feature**: [spec.md](../spec.md)
+**Re-validated**: 2026-02-21 (FR-011 rewrite, FR-012 addition, Clarifications section)
 
 ## Content Quality
 
@@ -31,5 +32,7 @@
 
 ## Notes
 
-- All items pass validation. Spec is ready for `/speckit.clarify` or `/speckit.plan`.
+- All items pass validation. Spec is ready for `/speckit.plan`.
+- Re-validated after: FR-011 parenthetical rewrite, FR-012 acceptance scenarios (US1 #4/#5) and SC-006 added.
 - Assumptions section documents key design decisions (no backward compatibility, single-process execution).
+- Clarifications section records 2 Q&As from session 2026-02-21.

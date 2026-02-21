@@ -23,7 +23,7 @@ def _format_output_content(self, output: BaseModel | str) -> str:
 ### execute
 
 ```python
-async def execute(self, task: str, context: dict[str, str] | None = None, **kwargs: str) -> MemberAgentResult:
+async def execute(self, task: str, context: dict[str, Any] | None = None, **kwargs: Any) -> MemberAgentResult:
 ```
 
 **Changed behavior**:

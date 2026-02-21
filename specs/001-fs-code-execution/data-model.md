@@ -14,7 +14,7 @@ submission-creator エージェントの構造化出力。コード本体はフ�
 | `submission_path` | `str` | Yes | 書き込んだ submission.py の絶対パス |
 | `description` | `str` | Yes | Submission の概要（Markdown） |
 
-**Validation**: なし（Pydantic BaseModel のデフォルトバリデーション）
+**Validation**: `submission_path` に `field_validator` で絶対パス検証を適用
 
 **Relationship**: Submission ファイル（`submissions/round_{N}/submission.py`）と1:1対応
 
@@ -29,7 +29,7 @@ train-analyzer エージェントの構造化出力。
 | `analysis_path` | `str` | Yes | 書き込んだ analysis.md の絶対パス |
 | `report` | `str` | Yes | 分析結果レポート（Markdown） |
 
-**Validation**: なし（Pydantic BaseModel のデフォルトバリデーション）
+**Validation**: `analysis_path` に `field_validator` で絶対パス検証を適用
 
 **Relationship**: Analysis ファイル（`submissions/round_{N}/analysis.md`）と1:1対応
 

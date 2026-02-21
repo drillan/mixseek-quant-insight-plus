@@ -18,7 +18,7 @@ class FileSubmitterOutput(BaseModel):
 ```
 
 **Invariants**:
-- `submission_path` は絶対パスであること
+- `submission_path` は絶対パスであること（`field_validator` で検証）
 - `description` は Markdown 形式のテキスト
 
 ---
@@ -37,5 +37,5 @@ class FileAnalyzerOutput(BaseModel):
 ```
 
 **Invariants**:
-- `analysis_path` は絶対パスであること
+- `analysis_path` は絶対パスであること（`field_validator` で検証）
 - `report` は Markdown 形式のテキスト

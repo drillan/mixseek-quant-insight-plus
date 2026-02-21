@@ -5,8 +5,20 @@
 """
 
 from pathlib import PurePosixPath
+from typing import Annotated
 
-from pydantic import BaseModel, field_validator
+from pydantic import AfterValidator, BaseModel
+
+
+def _validate_absolute_path(v: str) -> str:
+    """値が POSIX 絶対パスであることを検証する。"""
+    if not PurePosixPath(v).is_absolute():
+        msg = f"must be an absolute path, got: {v!r}"
+        raise ValueError(msg)
+    return v
+
+
+AbsolutePosixPath = Annotated[str, AfterValidator(_validate_absolute_path)]
 
 
 class FileSubmitterOutput(BaseModel):
@@ -16,17 +28,8 @@ class FileSubmitterOutput(BaseModel):
     構造化出力はファイルパスのみを含み、コードの二重管理を排除する。
     """
 
-    submission_path: str
+    submission_path: AbsolutePosixPath
     description: str
-
-    @field_validator("submission_path")
-    @classmethod
-    def validate_absolute_path(cls, v: str) -> str:
-        """submission_path が絶対パスであることを検証。"""
-        if not PurePosixPath(v).is_absolute():
-            msg = f"submission_path must be an absolute path, got: {v!r}"
-            raise ValueError(msg)
-        return v
 
 
 class FileAnalyzerOutput(BaseModel):
@@ -36,14 +39,5 @@ class FileAnalyzerOutput(BaseModel):
     （report はリーダーへの主要な報告内容として使用）。
     """
 
-    analysis_path: str
+    analysis_path: AbsolutePosixPath
     report: str
-
-    @field_validator("analysis_path")
-    @classmethod
-    def validate_absolute_path(cls, v: str) -> str:
-        """analysis_path が絶対パスであることを検証。"""
-        if not PurePosixPath(v).is_absolute():
-            msg = f"analysis_path must be an absolute path, got: {v!r}"
-            raise ValueError(msg)
-        return v

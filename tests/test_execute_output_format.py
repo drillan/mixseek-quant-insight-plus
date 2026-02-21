@@ -17,7 +17,7 @@ from quant_insight.evaluator.submission_parser import extract_code_from_submissi
 
 from quant_insight_plus.agents.agent import ClaudeCodeLocalCodeExecutorAgent
 
-# DuckDB ストアのパッチ対象パス（agent.py が FS ベースに移行するまでの暫定）
+# TODO: Remove after agent.py FS migration (see #39)
 _ENRICH_STORE_PATCH = "quant_insight_plus.agents.agent.get_implementation_store"
 
 SAMPLE_CODE = """\

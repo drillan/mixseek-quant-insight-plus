@@ -1,6 +1,6 @@
 """Submission Relay: ファイルシステムベースのコード管理。
 
-ラウンドディレクトリの管理と submission ファイルの読み取りを提供する。
+ラウンドディレクトリの管理を提供する。
 """
 
 from pathlib import Path

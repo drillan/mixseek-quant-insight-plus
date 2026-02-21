@@ -26,7 +26,7 @@ mixseek-core → mixseek-plus → mixseek-quant-insight → mixseek-quant-insigh
 **開始方法**（状況に応じて選択）:
 
 **A. 仕様定義から始める場合（speckit）**:
-1. `/speckit.specify` → `specs/<issue>-<name>/spec.md`
+1. `/speckit.specify` → `specs/<連番>-<name>/spec.md`
 2. `/speckit.plan` → `plan.md`, `research.md`, `data-model.md`
 3. `/speckit.tasks` → `tasks.md`
 4. `/speckit.implement` → TDDに従って実装
@@ -77,7 +77,7 @@ mixseek-core → mixseek-plus → mixseek-quant-insight → mixseek-quant-insigh
 ## 命名規則
 
 - 詳細: `.claude/git-conventions.md`
-- specs/: `<3桁issue番号>-<name>`（例: `001-auth`）
+- specs/: `<3桁連番>-<name>`（例: `001-auth`）
 - ブランチ: ゼロパディングなし
 
 ## CLIコマンド

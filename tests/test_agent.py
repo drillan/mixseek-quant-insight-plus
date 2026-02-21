@@ -5,27 +5,24 @@ from unittest.mock import MagicMock, patch
 from mixseek.models.member_agent import MemberAgentConfig
 
 from quant_insight_plus.agents.agent import ClaudeCodeLocalCodeExecutorAgent
-from tests.conftest import INIT_STORE_PATCH, MODEL_PATCH
+from tests.conftest import MODEL_PATCH
 
 
 class TestClaudeCodeLocalCodeExecutorAgentInit:
     """__init__ の動作を検証するテスト。"""
 
-    @patch(INIT_STORE_PATCH)
     @patch(MODEL_PATCH)
     def test_uses_create_authenticated_model(
         self,
         mock_create_model: MagicMock,
-        mock_get_store: MagicMock,
         member_agent_config: MemberAgentConfig,
-        mock_store: MagicMock,
         mock_model: MagicMock,
     ) -> None:
         """create_authenticated_model でモデルを解決すること。"""
         mock_create_model.return_value = mock_model
-        mock_get_store.return_value = mock_store
 
-        agent = ClaudeCodeLocalCodeExecutorAgent(member_agent_config)
+        with patch.object(ClaudeCodeLocalCodeExecutorAgent, "_verify_database_schema"):
+            agent = ClaudeCodeLocalCodeExecutorAgent(member_agent_config)
 
         mock_create_model.assert_called_once_with("claudecode:claude-opus-4-6")
         assert agent.agent.model is mock_model

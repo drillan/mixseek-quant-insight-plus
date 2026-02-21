@@ -16,7 +16,9 @@ from quant_insight.agents.local_code_executor.output_models import SubmitterOutp
 from quant_insight.evaluator.submission_parser import extract_code_from_submission
 
 from quant_insight_plus.agents.agent import ClaudeCodeLocalCodeExecutorAgent
-from tests.conftest import ENRICH_STORE_PATCH
+
+# DuckDB ストアのパッチ対象パス（agent.py が FS ベースに移行するまでの暫定）
+_ENRICH_STORE_PATCH = "quant_insight_plus.agents.agent.get_implementation_store"
 
 SAMPLE_CODE = """\
 import polars as pl
@@ -110,7 +112,7 @@ class TestExecuteOutputFormat:
     """execute() オーバーライドで SubmitterOutput が Markdown になることを検証。"""
 
     @pytest.mark.anyio
-    @patch(ENRICH_STORE_PATCH)
+    @patch(_ENRICH_STORE_PATCH)
     async def test_execute_submitter_output_uses_markdown_format(
         self,
         mock_get_store: MagicMock,
@@ -164,7 +166,7 @@ class TestExecuteOutputFormat:
         agent._save_output_scripts.assert_called_once_with(submitter_output)
 
     @pytest.mark.anyio
-    @patch(ENRICH_STORE_PATCH)
+    @patch(_ENRICH_STORE_PATCH)
     async def test_execute_error_returns_error_result(
         self,
         mock_get_store: MagicMock,

@@ -1,6 +1,6 @@
 [project]
 name = "mixseek-quant-insight-plus"
-version = "0.0.5"
+version = "0.0.6"
 description = "ClaudeCode integration for mixseek-quant-insight"
 readme = "README.md"
 license = { text = "Apache-2.0" }

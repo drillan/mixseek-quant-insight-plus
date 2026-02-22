@@ -7,8 +7,10 @@ mixseek-plus CLI をラップし、ClaudeCode 版 quant-insight エージェン�
 1. patch_core() で claudecode: プレフィックスを有効化
 2. mixseek-plus のエージェント登録
 3. quant-insight-plus のエージェント登録
-4. mixseek-core CLI アプリのインポート
-5. quant-insight サブコマンド（data, db, export）の統合
+4. patch_submission_relay() で提出リレーを有効化
+5. claudecode-model の DEFAULT_MAX_TURNS_WITH_JSON_SCHEMA パッチ
+6. mixseek-core CLI アプリのインポート
+7. quant-insight サブコマンド（data, db, export）の統合
 """
 
 import shutil
@@ -26,6 +28,14 @@ register_groq_agents()
 register_claudecode_agents()
 register_claudecode_quant_agents()
 patch_submission_relay()
+
+# claudecode-model の構造化出力時デフォルト max_turns を引き上げ。
+# オリジナル値 3 では ClaudeCode セッションが StructuredOutput ツール呼び出しを
+# 完了できず error_max_turns → リトライループが発生する。
+import claudecode_model.model as _claudecode_model_module  # noqa: E402
+
+_STRUCTURED_OUTPUT_MAX_TURNS = 10
+_claudecode_model_module.DEFAULT_MAX_TURNS_WITH_JSON_SCHEMA = _STRUCTURED_OUTPUT_MAX_TURNS  # type: ignore[attr-defined]
 
 from importlib.metadata import PackageNotFoundError, version  # noqa: E402
 

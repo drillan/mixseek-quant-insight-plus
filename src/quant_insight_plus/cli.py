@@ -7,8 +7,10 @@ mixseek-plus CLI をラップし、ClaudeCode 版 quant-insight エージェン�
 1. patch_core() で claudecode: プレフィックスを有効化
 2. mixseek-plus のエージェント登録
 3. quant-insight-plus のエージェント登録
-4. mixseek-core CLI アプリのインポート
-5. quant-insight サブコマンド（data, db, export）の統合
+4. patch_submission_relay() で提出リレーを有効化
+5. claudecode-model の DEFAULT_MAX_TURNS_WITH_JSON_SCHEMA パッチ
+6. mixseek-core CLI アプリのインポート
+7. quant-insight サブコマンド（data, db, export）の統合
 """
 
 import shutil

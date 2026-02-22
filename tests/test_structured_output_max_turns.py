@@ -8,7 +8,6 @@ import claudecode_model.model as claudecode_model_module
 
 # cli.py の定数
 EXPECTED_MAX_TURNS = 10
-_ORIGINAL_DEFAULT = 3
 
 
 def _get_patched_value() -> int:
@@ -24,9 +23,3 @@ class TestStructuredOutputMaxTurnsPatch:
         import quant_insight_plus.cli  # noqa: F401
 
         assert _get_patched_value() == EXPECTED_MAX_TURNS
-
-    def test_default_max_turns_not_original_value(self) -> None:
-        """パッチ後の値がオリジナルの 3 ではないこと。"""
-        import quant_insight_plus.cli  # noqa: F401
-
-        assert _get_patched_value() != _ORIGINAL_DEFAULT

@@ -8,20 +8,16 @@ from pathlib import Path
 
 import pytest
 
-_MEMBERS_DIR = (
-    Path(__file__).resolve().parent.parent / "src" / "quant_insight_plus" / "templates" / "agents" / "members"
-)
+from quant_insight_plus.cli import _TEMPLATES_DIR
 
-_MEMBER_TEMPLATES = [
-    "train_analyzer_claudecode.toml",
-    "submission_creator_claudecode.toml",
-]
+_MEMBERS_DIR = _TEMPLATES_DIR / "agents" / "members"
+_MEMBER_TEMPLATES = sorted(_MEMBERS_DIR.glob("*_claudecode.toml"))
 
 
 @pytest.fixture(params=_MEMBER_TEMPLATES)
 def member_template_content(request: pytest.FixtureRequest) -> str:
     """各メンバーエージェントテンプレートの内容を返す。"""
-    template_path = _MEMBERS_DIR / str(request.param)
+    template_path = Path(request.param)
     return template_path.read_text(encoding="utf-8")
 
 
@@ -48,3 +44,24 @@ class TestMemberPromptExecutionConstraints:
     def test_restricts_to_provided_data(self, member_template_content: str) -> None:
         """提供データのみを対象とする制約があること。"""
         assert "外部データ" in member_template_content or "システム探索" in member_template_content
+
+
+def _extract_constraint_block(content: str) -> str:
+    """テンプレートから「コマンド実行の制約」セクションを抽出する。"""
+    start = content.index("## コマンド実行の制約")
+    end = content.index("## ガイドライン", start)
+    return content[start:end]
+
+
+class TestConstraintBlockConsistency:
+    """全メンバーテンプレート間で制約ブロックが同一であることを検証。"""
+
+    def test_constraint_blocks_are_identical(self) -> None:
+        """全メンバーテンプレートの制約ブロックがドリフトしていないこと。"""
+        assert len(_MEMBER_TEMPLATES) >= 2, "比較対象のテンプレートが不足"
+        contents = [t.read_text(encoding="utf-8") for t in _MEMBER_TEMPLATES]
+        blocks = [_extract_constraint_block(c) for c in contents]
+        for i in range(1, len(blocks)):
+            assert blocks[0] == blocks[i], (
+                f"制約ブロックがドリフトしています: {_MEMBER_TEMPLATES[0].name} と {_MEMBER_TEMPLATES[i].name}"
+            )

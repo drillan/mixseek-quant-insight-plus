@@ -7,7 +7,7 @@ cli.py のインポート時に上書きされることを検証する。
 import claudecode_model.model as claudecode_model_module
 
 # cli.py の定数
-EXPECTED_MAX_TURNS = 10
+EXPECTED_MAX_TURNS = 50
 
 
 def _get_patched_value() -> int:
@@ -19,7 +19,7 @@ class TestStructuredOutputMaxTurnsPatch:
     """DEFAULT_MAX_TURNS_WITH_JSON_SCHEMA のパッチテスト。"""
 
     def test_default_max_turns_patched_on_cli_import(self) -> None:
-        """cli.py インポート後に DEFAULT_MAX_TURNS_WITH_JSON_SCHEMA が 10 であること。"""
+        """cli.py インポート後に DEFAULT_MAX_TURNS_WITH_JSON_SCHEMA が 50 であること。"""
         import quant_insight_plus.cli  # noqa: F401
 
         assert _get_patched_value() == EXPECTED_MAX_TURNS

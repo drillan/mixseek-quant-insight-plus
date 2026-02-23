@@ -1671,8 +1671,8 @@ wheels = [
 
 [[package]]
 name = "mixseek-plus"
-version = "0.0.10"
-source = { git = "https://github.com/drillan/mixseek-plus#fd21a857641f3700b140652e6cd66f9464136aa4" }
+version = "0.0.11"
+source = { git = "https://github.com/drillan/mixseek-plus#20090e62a7eb1f5cec97bb08811db444236f0b63" }
 dependencies = [
     { name = "claude-agent-sdk" },
     { name = "claudecode-model" },
@@ -1702,7 +1702,7 @@ dependencies = [
 
 [[package]]
 name = "mixseek-quant-insight-plus"
-version = "0.0.6"
+version = "0.0.7"
 source = { editable = "." }
 dependencies = [
     { name = "mixseek-plus" },

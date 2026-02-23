@@ -32,9 +32,11 @@ patch_submission_relay()
 # claudecode-model の構造化出力時デフォルト max_turns を引き上げ。
 # オリジナル値 3 では ClaudeCode セッションが StructuredOutput ツール呼び出しを
 # 完了できず error_max_turns → リトライループが発生する。
+# Member Agent はデータ分析等の実作業後に StructuredOutput を呼ぶため、
+# 十分なターン数が必要。タイムアウト（timeout_per_team_seconds）が安全装置として機能する。
 import claudecode_model.model as _claudecode_model_module  # noqa: E402
 
-_STRUCTURED_OUTPUT_MAX_TURNS = 10
+_STRUCTURED_OUTPUT_MAX_TURNS = 50
 _claudecode_model_module.DEFAULT_MAX_TURNS_WITH_JSON_SCHEMA = _STRUCTURED_OUTPUT_MAX_TURNS  # type: ignore[attr-defined]
 
 from importlib.metadata import PackageNotFoundError, version  # noqa: E402

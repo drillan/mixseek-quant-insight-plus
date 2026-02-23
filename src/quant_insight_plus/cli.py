@@ -9,7 +9,8 @@ mixseek-plus CLI をラップし、ClaudeCode 版 quant-insight エージェン�
 3. quant-insight-plus のエージェント登録
 4. patch_submission_relay() で提出リレーを有効化
 5. claudecode-model の DEFAULT_MAX_TURNS_WITH_JSON_SCHEMA パッチ
-6. mixseek-core CLI アプリのインポート
+6. OrchestratorSettings.timeout_per_team_seconds の上限緩和パッチ
+7. mixseek-core CLI アプリのインポート
 7. quant-insight サブコマンド（data, db, export）の統合
 """
 
@@ -38,6 +39,19 @@ import claudecode_model.model as _claudecode_model_module  # noqa: E402
 
 _STRUCTURED_OUTPUT_MAX_TURNS = 50
 _claudecode_model_module.DEFAULT_MAX_TURNS_WITH_JSON_SCHEMA = _STRUCTURED_OUTPUT_MAX_TURNS  # type: ignore[attr-defined]
+
+# OrchestratorSettings.timeout_per_team_seconds の上限を緩和。
+# mixseek-core のスキーマでは le=3600（1時間）に制限されているが、
+# ClaudeCode チーム実行では MCP セッション起動遅延等により 3600s を超えることがある。
+# upstream 修正までの暫定パッチとして上限を 14400s（4時間）に引き上げる。
+from mixseek.config.schema import OrchestratorSettings  # noqa: E402
+
+_TIMEOUT_UPPER_LIMIT_SECONDS = 14400
+_timeout_field = OrchestratorSettings.model_fields["timeout_per_team_seconds"]
+_timeout_field.metadata = [
+    m if not hasattr(m, "le") else type(m)(le=_TIMEOUT_UPPER_LIMIT_SECONDS) for m in _timeout_field.metadata
+]
+OrchestratorSettings.model_rebuild(force=True)
 
 from importlib.metadata import PackageNotFoundError, version  # noqa: E402
 

@@ -93,6 +93,7 @@ Submissionスクリプトはファイルシステム経由でEvaluatorに自動�
 
 [team.leader.tool_settings.claudecode]
 preset = "delegate_only"
+timeout_seconds = 7200
 
 [[team.members]]
 config = "configs/agents/members/train_analyzer_claudecode.toml"
